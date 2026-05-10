@@ -300,6 +300,9 @@ function inferMode(records: ReturnType<typeof parseJsonl>): AER["run"]["mode"] {
 }
 
 function inferOutcome(records: ReturnType<typeof parseJsonl>): AER["run"]["outcome"] {
+  if (records.some((record) => record.raw.isApiErrorMessage === true || record.raw.error)) {
+    return "failed";
+  }
   if (countErrors(records) > 0) return "partial";
   return records.some((record) => record.type === "assistant") ? "completed" : "abandoned";
 }
@@ -337,10 +340,11 @@ function countErrors(records: ReturnType<typeof parseJsonl>): number {
   return records.reduce((count, record) => {
     const toolUseResult = objectValue(record.raw.toolUseResult);
     const explicitError = toolUseResult?.is_error === true || toolUseResult?.interrupted === true;
+    const apiError = record.raw.isApiErrorMessage === true || typeof record.raw.error === "string";
     const contentErrors = arrayValue(objectValue(record.raw.message)?.content).filter(
       (item) => objectValue(item)?.is_error === true,
     ).length;
-    return count + (explicitError ? 1 : 0) + contentErrors;
+    return count + (explicitError ? 1 : 0) + (apiError ? 1 : 0) + contentErrors;
   }, 0);
 }
 

@@ -41,6 +41,16 @@ describe("@aer/adapter-claude-code", () => {
     expect(action?.mutates).toBe(false);
   });
 
+  it("marks API error sessions as failed without inventing tool calls", () => {
+    const jsonl = readFileSync(join(fixtureDir, "rate-limit.jsonl"), "utf8");
+    const aer = parseAER(convert(jsonl));
+
+    expect(aer.run.outcome).toBe("failed");
+    expect(aer.costs.errors).toBe(1);
+    expect(aer.costs.toolCalls).toBe(0);
+    expect(aer.costs.toolCallBreakdown).toEqual({});
+  });
+
   it("classifies tools conservatively", () => {
     expect(classifyTool("Read")).toBe("read");
     expect(classifyTool("WebSearch")).toBe("search");

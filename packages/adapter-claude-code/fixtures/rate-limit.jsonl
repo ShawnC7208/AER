@@ -1,0 +1,4 @@
+{"type":"queue-operation","operation":"enqueue","timestamp":"2026-04-17T01:31:06.068Z","sessionId":"rate-limit","content":"<scheduled-task name=\"daily-research-for-apd\">Research APD.</scheduled-task>"}
+{"type":"queue-operation","operation":"dequeue","timestamp":"2026-04-17T01:31:06.078Z","sessionId":"rate-limit"}
+{"type":"user","timestamp":"2026-04-17T01:31:06.081Z","sessionId":"rate-limit","message":{"role":"user","content":"<scheduled-task name=\"daily-research-for-apd\">Research APD.</scheduled-task>"}}
+{"type":"assistant","timestamp":"2026-04-17T01:31:06.418Z","sessionId":"rate-limit","message":{"model":"<synthetic>","role":"assistant","content":[{"type":"text","text":"You've hit your limit · resets 9pm (America/Chicago)"}]},"error":"rate_limit","isApiErrorMessage":true,"apiErrorStatus":429}
