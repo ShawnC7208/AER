@@ -1,0 +1,34 @@
+{
+  "name": "@aer/cli",
+  "version": "0.1.0",
+  "description": "AER command-line tools.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "aer": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "aer": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@aer/adapter-claude-code": "workspace:*",
+    "@aer/core": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8"
+  }
+}

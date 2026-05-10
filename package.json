@@ -1,0 +1,23 @@
+{
+  "name": "aer-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent Execution Records: deterministic conversion of agent logs into auditable records.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "build": "corepack pnpm -r build",
+    "typecheck": "corepack pnpm build && corepack pnpm -r typecheck",
+    "test": "corepack pnpm -r test",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "aer": "corepack pnpm --filter @aer/cli aer"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^20.17.16",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

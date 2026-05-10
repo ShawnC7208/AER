@@ -1,0 +1,3 @@
+{"type":"user","timestamp":"2026-01-01T00:00:00.000Z","sessionId":"synthetic-minimal","message":{"role":"user","content":"Inspect the README."}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:01.000Z","sessionId":"synthetic-minimal","message":{"role":"assistant","model":"claude-test","content":[{"type":"tool_use","id":"toolu_read","name":"Read","input":{"file_path":"README.md"}}]}}
+{"type":"user","timestamp":"2026-01-01T00:00:02.000Z","sessionId":"synthetic-minimal","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_read","content":"1\t# Example","is_error":false}]}}

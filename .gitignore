@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Local design planning artifacts and raw logs are intentionally kept out of git.
+DesignDocs/
+
+# Generated AER outputs
+examples/*.aer.json
+examples/*.aer.html
+aer-out/
