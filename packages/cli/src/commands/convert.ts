@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { basename } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, dirname } from "node:path";
 import { convert } from "@aer/adapter-claude-code";
 import { parseAER } from "@aer/core";
 
@@ -15,6 +15,7 @@ export function runConvert(input: string, opts: ConvertCommandOptions = {}): voi
   const serialized = `${JSON.stringify(aer, null, 2)}\n`;
 
   if (opts.output) {
+    mkdirSync(dirname(opts.output), { recursive: true });
     writeFileSync(opts.output, serialized);
     process.stderr.write(`Wrote ${opts.output}\n`);
     return;

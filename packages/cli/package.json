@@ -20,7 +20,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "aer": "tsx src/index.ts"
+    "aer": "pnpm build && node dist/index.js"
   },
   "dependencies": {
     "@aer/adapter-claude-code": "workspace:*",
