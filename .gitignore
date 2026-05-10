@@ -14,3 +14,6 @@ DesignDocs/
 examples/*.aer.json
 examples/*.aer.html
 aer-out/
+
+# Local-only test fixtures and helper scripts — never committed
+test-artifacts/
