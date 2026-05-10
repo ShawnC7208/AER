@@ -18,5 +18,9 @@ The top-level fields are:
 - `costs`
 - `raw`
 
-Phase 1 emits deterministic records only. `claims` stays empty until optional LLM
-enrichment lands in a later phase.
+Phase 1 emits deterministic records only:
+
+- `phases` contains one placeholder phase named `Phase 1`.
+- `verification` is empty until deterministic verification detection lands in Phase 4.
+- `claims` is empty until optional LLM enrichment lands in Phase 6.
+- `gates` is empty until richer approval extraction lands later.

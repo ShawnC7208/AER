@@ -9,3 +9,10 @@ Rules:
 - Default unknown tools to non-mutating.
 - Never branch on inferred run type.
 - Populate sections with available data and leave unavailable sections empty.
+
+For local testing, run:
+
+```sh
+pnpm aer convert examples/daily-research.jsonl -o examples/daily-research.aer.json
+pnpm --filter @aer/adapter-claude-code test
+```
