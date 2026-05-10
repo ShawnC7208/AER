@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
 import { type Action, type Mutation, sha256, unifiedDiff } from "@aer/core";
-import { type ClaudeRecord, objectValue } from "./parse.js";
+import { type ClaudeRecord, objectValue, stringValue } from "./parse.js";
 
 export interface MutationResult {
   mutations: Mutation[];
@@ -21,6 +22,7 @@ export function extractMutations(
   opts: { withDisk?: boolean } = {},
 ): MutationResult {
   const reads = collectReadContents(toolActions, records);
+  const toolResults = collectToolResults(records);
   const warnings: string[] = [];
   const mutations: Mutation[] = [];
 
@@ -28,16 +30,14 @@ export function extractMutations(
     if (!toolAction.action.mutates) continue;
 
     const input = objectValue(toolAction.input);
-    const target =
-      typeof input?.file_path === "string" ? input.file_path : toolAction.action.target;
+    const target = mutationTarget(toolAction);
     if (!target) continue;
 
-    const before = beforeContent(target, toolAction, reads, opts);
+    const before = beforeContent(target, toolAction, reads, toolResults, opts);
     const after = afterContent(toolAction, before);
 
     if (after === undefined && toolAction.name !== "Bash") {
       warnings.push(`Could not determine after content for ${toolAction.name} ${target}`);
-      continue;
     }
     if (before === undefined) warnings.push(`Could not determine before content for ${target}`);
 
@@ -71,6 +71,13 @@ export function extractMutations(
   return { mutations, warnings };
 }
 
+function mutationTarget(toolAction: ToolActionContext): string | undefined {
+  const input = objectValue(toolAction.input);
+  if (typeof input?.file_path === "string") return input.file_path;
+  if (typeof input?.notebook_path === "string") return input.notebook_path;
+  return toolAction.action.target;
+}
+
 function collectReadContents(
   toolActions: ToolActionContext[],
   records: ClaudeRecord[],
@@ -101,10 +108,31 @@ function collectReadContents(
   return reads;
 }
 
+function collectToolResults(records: ClaudeRecord[]): Map<string, Record<string, unknown>> {
+  const results = new Map<string, Record<string, unknown>>();
+
+  for (const record of records) {
+    if (record.type !== "user") continue;
+    const message = objectValue(record.raw.message);
+    const contents = Array.isArray(message?.content) ? message.content : [];
+    for (const item of contents) {
+      const result = objectValue(item);
+      if (!result || result.type !== "tool_result") continue;
+      const toolUseId = stringValue(result.tool_use_id);
+      if (!toolUseId) continue;
+      const topLevelResult = objectValue(record.raw.toolUseResult);
+      results.set(toolUseId, topLevelResult ?? result);
+    }
+  }
+
+  return results;
+}
+
 function beforeContent(
   target: string,
   toolAction: ToolActionContext,
   reads: Map<string, { recordIndex: number; content: string }[]>,
+  toolResults: Map<string, Record<string, unknown>>,
   opts: { withDisk?: boolean },
 ): string | undefined {
   const fromRead = reads
@@ -113,10 +141,12 @@ function beforeContent(
     .at(-1)?.content;
   if (fromRead !== undefined) return fromRead;
 
-  const toolUseResult = objectValue(toolAction.record.raw.toolUseResult);
+  const toolUseResult = toolResults.get(toolAction.toolUseId);
   if (typeof toolUseResult?.originalFile === "string") return toolUseResult.originalFile;
 
-  if (opts.withDisk && existsSync(target)) return readFileSync(target, "utf8");
+  const cwd = stringValue(toolAction.record.raw.cwd);
+  const diskPath = isAbsolute(target) || !cwd ? target : resolve(cwd, target);
+  if (opts.withDisk && existsSync(diskPath)) return readFileSync(diskPath, "utf8");
   return undefined;
 }
 
@@ -129,8 +159,7 @@ function afterContent(
 
   if (toolAction.name === "Write" && typeof input.content === "string") return input.content;
   if (toolAction.name === "Edit") {
-    if (before === undefined)
-      return typeof input.new_string === "string" ? input.new_string : undefined;
+    if (before === undefined) return undefined;
     if (typeof input.old_string === "string" && typeof input.new_string === "string") {
       return before.replace(input.old_string, input.new_string);
     }

@@ -143,7 +143,7 @@ function buildActions(records: ReturnType<typeof parseJsonl>): ActionBuildResult
               toolName: "assistant_text",
               mutates: false,
               inputSummary: trim(stringValue(block.text) ?? "assistant text"),
-              errored: false,
+              errored: recordErrored(record),
             }),
           );
           emitted = true;
@@ -164,7 +164,7 @@ function buildActions(records: ReturnType<typeof parseJsonl>): ActionBuildResult
             toolName: "tool_result",
             mutates: false,
             inputSummary: summarizeContent(block.content),
-            errored: block.is_error === true,
+            errored: block.is_error === true || recordErrored(record),
           }),
         );
         emitted = true;
@@ -196,7 +196,7 @@ function actionForRecord(record: ReturnType<typeof parseJsonl>[number], ordinal:
     mutates: false,
     inputSummary: summarizeRecord(record.raw),
     phaseId: "p1",
-    errored: false,
+    errored: recordErrored(record),
   };
   const target = record.type === "ai-title" ? stringValue(record.raw.aiTitle) : undefined;
   if (target) action.target = target;
@@ -245,9 +245,13 @@ function attachToolResults(
       const toolAction = byToolUseId.get(toolUseId);
       if (!toolAction) continue;
       toolAction.action.outputSummary = summarizeContent(block.content);
-      toolAction.action.errored = block.is_error === true;
+      toolAction.action.errored = toolAction.action.errored || block.is_error === true;
     }
   }
+}
+
+function recordErrored(record: ReturnType<typeof parseJsonl>[number]): boolean {
+  return record.raw.isApiErrorMessage === true || typeof record.raw.error === "string";
 }
 
 function summarizeRecord(raw: Record<string, unknown>): string {

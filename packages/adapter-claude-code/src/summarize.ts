@@ -4,6 +4,7 @@ export function targetForTool(name: string, input: unknown): string | undefined 
   const object = objectValue(input);
   if (!object) return undefined;
   if (typeof object.file_path === "string") return object.file_path;
+  if (typeof object.notebook_path === "string") return object.notebook_path;
   if (typeof object.path === "string") return object.path;
   if (typeof object.url === "string") return object.url;
   if (typeof object.query === "string") return object.query;

@@ -39,6 +39,9 @@ pnpm install
 pnpm aer convert examples/daily-research.jsonl -o examples/daily-research.aer.json
 ```
 
+The checked-in JSONL examples are sanitized fixtures. Keep public fixtures free of
+real usernames, home directories, private repository paths, tokens, and secrets.
+
 Convert one of your local Claude Code sessions:
 
 ```sh
@@ -58,7 +61,8 @@ Options:
 
 - `-o, --output` writes the AER JSON to a file. Parent folders are created if needed.
 - `--with-disk` allows the adapter to read files from disk when the trace lacks prior
-  file content for mutation diffs.
+  file content for mutation diffs. Relative file paths are resolved from the source
+  record's `cwd` when it is available.
 
 Generated files matching `examples/*.aer.json` and `examples/*.aer.html` are ignored
 by git.

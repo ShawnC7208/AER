@@ -16,3 +16,7 @@ For local testing, run:
 pnpm aer convert examples/daily-research.jsonl -o examples/daily-research.aer.json
 pnpm --filter @aer/adapter-claude-code test
 ```
+
+Fixture JSONL files committed to the repo should be sanitized before review. Replace
+real usernames, home directories, private workspace paths, tokens, and secrets with
+stable synthetic values.
