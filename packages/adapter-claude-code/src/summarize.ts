@@ -4,6 +4,7 @@ export function targetForTool(name: string, input: unknown): string | undefined 
   const object = objectValue(input);
   if (!object) return undefined;
   if (typeof object.file_path === "string") return object.file_path;
+  if (typeof object.notebook_path === "string") return object.notebook_path;
   if (typeof object.path === "string") return object.path;
   if (typeof object.url === "string") return object.url;
   if (typeof object.query === "string") return object.query;
@@ -46,7 +47,7 @@ export function summarizeContent(content: unknown): string {
   return "";
 }
 
-export function trim(value: string, max = 180): string {
+export function trim(value: string, max = 300): string {
   const compact = value.replace(/\s+/g, " ").trim();
   return compact.length > max ? `${compact.slice(0, max - 1)}…` : compact;
 }

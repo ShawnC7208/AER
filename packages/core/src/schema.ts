@@ -26,7 +26,7 @@ export const runSchema = z.object({
 
 export const phaseSchema = z.object({
   id: z.string(),
-  index: z.number().int().positive(),
+  index: z.number().int().nonnegative(),
   name: z.string(),
   nameSource: z.enum(["generic", "llm"]),
   why: z.string().optional(),
@@ -139,20 +139,33 @@ export const rawRefSchema = z.object({
   sha256: z.string(),
 });
 
-export const aerSchema = z.object({
-  version: z.literal("1.0"),
-  run: runSchema,
-  phases: z.array(phaseSchema),
-  actions: z.array(actionSchema),
-  mutations: z.array(mutationSchema),
-  filesTouched: z.array(fileTouchedSchema),
-  verification: z.array(verificationCheckSchema),
-  claims: z.array(claimSchema),
-  gates: z.array(gateSchema),
-  artifacts: z.array(artifactSchema),
-  costs: costsSchema,
-  raw: rawRefSchema,
-});
+export const aerSchema = z
+  .object({
+    version: z.literal("1.0"),
+    run: runSchema,
+    phases: z.array(phaseSchema),
+    actions: z.array(actionSchema),
+    mutations: z.array(mutationSchema),
+    filesTouched: z.array(fileTouchedSchema),
+    verification: z.array(verificationCheckSchema),
+    claims: z.array(claimSchema),
+    gates: z.array(gateSchema),
+    artifacts: z.array(artifactSchema),
+    costs: costsSchema,
+    raw: rawRefSchema,
+  })
+  .superRefine((data, ctx) => {
+    const phaseIds = new Set(data.phases.map((p) => p.id));
+    for (const [i, action] of data.actions.entries()) {
+      if (!phaseIds.has(action.phaseId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["actions", i, "phaseId"],
+          message: `phaseId '${action.phaseId}' does not reference any phase`,
+        });
+      }
+    }
+  });
 
 export function parseAER(input: unknown): AER {
   return aerSchema.parse(input) as AER;

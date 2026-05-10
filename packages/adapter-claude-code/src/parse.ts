@@ -1,6 +1,5 @@
 export interface ClaudeRecord {
   index: number;
-  line: string;
   raw: Record<string, unknown>;
   type: string;
   timestamp?: string;
@@ -22,7 +21,6 @@ export function parseJsonl(jsonl: string): ClaudeRecord[] {
 
       const record: ClaudeRecord = {
         index,
-        line,
         raw,
         type: stringValue(raw.type) ?? "unknown",
       };

@@ -18,6 +18,8 @@ const toolKinds: Record<string, ActionKind> = {
   Bash: "other",
 };
 
+// Conservative: prefers false-negatives (missed mutations) over false-positives.
+// Intentionally omits: git push, dd, package managers (apt/npm install), and sed without -i.
 const mutatingCommandPattern =
   /(^|\s)(rm|mv|cp|mkdir|rmdir|touch|chmod|chown)\b|>\s*\S|>>\s*\S|\|\s*tee\b|(^|\s)(sed|perl)\s+(-i|--in-place)\b/;
 
