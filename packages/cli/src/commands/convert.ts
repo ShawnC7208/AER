@@ -20,7 +20,10 @@ export function runConvert(input: string, opts: ConvertCommandOptions = {}): voi
 
   let aer: ReturnType<typeof parseAER>;
   try {
-    const convertOptions = { rawPath: basename(input), ...(opts.withDisk ? { withDisk: true } : {}) };
+    const convertOptions = {
+      rawPath: basename(input),
+      ...(opts.withDisk ? { withDisk: true } : {}),
+    };
     aer = parseAER(convert(jsonl, convertOptions));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

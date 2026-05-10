@@ -8,6 +8,7 @@ coverage/
 
 # Local design planning artifacts and raw logs are intentionally kept out of git.
 DesignDocs/
+.claude/
 
 # Generated AER outputs
 examples/*.aer.json
