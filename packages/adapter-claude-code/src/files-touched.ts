@@ -1,5 +1,7 @@
 import type { FileTouched, Mutation } from "@aer/core";
 
+// Assumes mutation.target paths are stable across records (no ./src vs src variance).
+// Claude Code logs paths consistently, so normalization is not applied here.
 export function rollupFilesTouched(mutations: Mutation[]): FileTouched[] {
   const byPath = new Map<string, Mutation[]>();
   for (const mutation of mutations) {

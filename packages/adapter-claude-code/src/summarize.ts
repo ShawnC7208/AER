@@ -47,7 +47,7 @@ export function summarizeContent(content: unknown): string {
   return "";
 }
 
-export function trim(value: string, max = 180): string {
+export function trim(value: string, max = 300): string {
   const compact = value.replace(/\s+/g, " ").trim();
   return compact.length > max ? `${compact.slice(0, max - 1)}…` : compact;
 }

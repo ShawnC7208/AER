@@ -36,6 +36,11 @@ export function extractMutations(
     const before = beforeContent(target, toolAction, reads, toolResults, opts);
     const after = afterContent(toolAction, before);
 
+    // Write must always carry its content in the input; skip rather than emit a partial record.
+    if (after === undefined && toolAction.name === "Write") {
+      warnings.push(`Skipping Write mutation for ${target}: no content in tool input`);
+      continue;
+    }
     if (after === undefined && toolAction.name !== "Bash") {
       warnings.push(`Could not determine after content for ${toolAction.name} ${target}`);
     }
