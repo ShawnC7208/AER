@@ -7,6 +7,52 @@ const fileInput = document.querySelector<HTMLInputElement>("[data-file-input]");
 const output = document.querySelector<HTMLIFrameElement>("[data-output]");
 const status = document.querySelector<HTMLElement>("[data-status]");
 const exampleButton = document.querySelector<HTMLButtonElement>("[data-example]");
+const exampleJsonl = [
+  {
+    type: "user",
+    timestamp: "2026-01-01T00:00:00.000Z",
+    sessionId: "browser-example",
+    message: { role: "user", content: "Create a short launch note for AER." },
+  },
+  {
+    type: "assistant",
+    timestamp: "2026-01-01T00:00:01.000Z",
+    sessionId: "browser-example",
+    message: {
+      role: "assistant",
+      model: "claude-example",
+      content: [
+        {
+          type: "tool_use",
+          id: "toolu_write",
+          name: "Write",
+          input: {
+            file_path: "launch-note.md",
+            content: "# AER\n\nA deterministic viewer for agent execution records.\n",
+          },
+        },
+      ],
+    },
+  },
+  {
+    type: "user",
+    timestamp: "2026-01-01T00:00:02.000Z",
+    sessionId: "browser-example",
+    message: {
+      role: "user",
+      content: [
+        {
+          type: "tool_result",
+          tool_use_id: "toolu_write",
+          content: "created launch-note.md",
+          is_error: false,
+        },
+      ],
+    },
+  },
+]
+  .map((record) => JSON.stringify(record))
+  .join("\n");
 
 dropzone?.addEventListener("click", () => fileInput?.click());
 dropzone?.addEventListener("dragover", (event) => {
@@ -26,9 +72,7 @@ fileInput?.addEventListener("change", () => {
   const file = fileInput.files?.[0];
   if (file) void renderFile(file);
 });
-exampleButton?.addEventListener("click", () => {
-  void renderExample();
-});
+exampleButton?.addEventListener("click", renderExample);
 
 async function renderFile(file: File): Promise<void> {
   setStatus(`Reading ${file.name}...`);
@@ -36,11 +80,9 @@ async function renderFile(file: File): Promise<void> {
   renderText(text, file.name);
 }
 
-async function renderExample(): Promise<void> {
-  setStatus("Loading example...");
-  const response = await fetch("./daily-research.jsonl");
-  if (!response.ok) throw new Error(`Could not load example: ${response.status}`);
-  renderText(await response.text(), "daily-research.jsonl");
+function renderExample(): void {
+  setStatus("Rendering example...");
+  renderText(exampleJsonl, "browser-example.jsonl");
 }
 
 function renderText(text: string, name: string): void {

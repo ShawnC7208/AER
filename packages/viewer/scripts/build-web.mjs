@@ -11,7 +11,7 @@ await esbuild.build({
   entryPoints: [resolve(root, "packages/viewer/src/browser.ts")],
   outfile: output,
   bundle: true,
-  format: "esm",
+  format: "iife",
   platform: "browser",
   target: "es2022",
   sourcemap: true,
