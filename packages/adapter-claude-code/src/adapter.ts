@@ -3,6 +3,7 @@ import { classifyTool, isMutating } from "./classify.js";
 import { rollupFilesTouched } from "./files-touched.js";
 import { type ToolActionContext, extractMutations } from "./mutations.js";
 import { arrayValue, objectValue, parseJsonl, stringValue } from "./parse.js";
+import { buildPhases } from "./phases.js";
 import { summarizeContent, summarizeToolInput, targetForTool, trim } from "./summarize.js";
 
 export interface ConvertOptions {
@@ -19,11 +20,11 @@ interface ActionBuildResult {
 export function convert(jsonl: string, opts: ConvertOptions = {}): AER {
   const records = parseJsonl(jsonl);
   const { actions, toolActions } = buildActions(records);
-  const mutationResult = extractMutations(toolActions, records, opts);
-  const filesTouched = rollupFilesTouched(mutationResult.mutations);
   const startedAt = firstTimestamp(records);
   const endedAt = lastTimestamp(records);
-  const phaseActionIds = actions.map((action) => action.id);
+  const phases = buildPhases(actions, startedAt, endedAt);
+  const mutationResult = extractMutations(toolActions, records, opts);
+  const filesTouched = rollupFilesTouched(mutationResult.mutations);
   const toolCallBreakdown = toolActions.reduce<Record<string, number>>((acc, toolAction) => {
     acc[toolAction.name] = (acc[toolAction.name] ?? 0) + 1;
     return acc;
@@ -67,19 +68,7 @@ export function convert(jsonl: string, opts: ConvertOptions = {}): AER {
   return {
     version: "1.0",
     run,
-    phases: [
-      {
-        id: "p1",
-        index: 1,
-        name: "Phase 1",
-        nameSource: "generic",
-        startedAt,
-        endedAt,
-        durationMs: durationMs(startedAt, endedAt),
-        actionIds: phaseActionIds,
-        recordRange: [0, Math.max(records.length - 1, 0)],
-      },
-    ],
+    phases,
     actions,
     mutations: mutationResult.mutations,
     filesTouched,
