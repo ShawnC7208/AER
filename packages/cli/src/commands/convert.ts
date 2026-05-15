@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname } from "node:path";
+import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, relative, sep } from "node:path";
 import { convert } from "@aer/adapter-claude-code";
 import { parseAER } from "@aer/core";
+import { errorMessage, fail, isDirectory, readFileIfExists, readTextFile } from "./shared.js";
 
 export interface ConvertCommandOptions {
   output?: string;
@@ -9,15 +10,39 @@ export interface ConvertCommandOptions {
 }
 
 export function runConvert(input: string, opts: ConvertCommandOptions = {}): void {
-  let jsonl: string;
-  try {
-    jsonl = readFileSync(input, "utf8");
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`aer: cannot read '${input}': ${msg}\n`);
-    process.exit(1);
+  if (isDirectory(input)) {
+    runConvertDirectory(input, opts);
+    return;
   }
 
+  const aer = convertFile(input, opts);
+  const serialized = `${JSON.stringify(aer, null, 2)}\n`;
+
+  if (opts.output) {
+    writeOutput(opts.output, serialized);
+    return;
+  }
+
+  process.stdout.write(serialized);
+}
+
+function runConvertDirectory(input: string, opts: ConvertCommandOptions): void {
+  const files = findJsonlFiles(input);
+  if (files.length === 0) fail(`no .jsonl files found in '${input}'`);
+
+  const outputDir = opts.output ?? "aer-out";
+  let written = 0;
+  for (const file of files) {
+    const aer = convertFile(file, opts);
+    const output = join(outputDir, `${safeRelativeStem(input, file)}.aer.json`);
+    writeOutput(output, `${JSON.stringify(aer, null, 2)}\n`);
+    written += 1;
+  }
+  process.stderr.write(`Converted ${written} file${written === 1 ? "" : "s"} to ${outputDir}\n`);
+}
+
+function convertFile(input: string, opts: ConvertCommandOptions): ReturnType<typeof parseAER> {
+  const jsonl = readTextFile(input);
   let aer: ReturnType<typeof parseAER>;
   try {
     const convertOptions = {
@@ -27,29 +52,38 @@ export function runConvert(input: string, opts: ConvertCommandOptions = {}): voi
     };
     aer = parseAER(convert(jsonl, convertOptions));
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`aer: conversion failed: ${msg}\n`);
-    process.exit(1);
+    fail(`conversion failed for '${input}': ${errorMessage(err)}`);
   }
-
-  const serialized = `${JSON.stringify(aer, null, 2)}\n`;
-
-  if (opts.output) {
-    try {
-      mkdirSync(dirname(opts.output), { recursive: true });
-      writeFileSync(opts.output, serialized);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      process.stderr.write(`aer: cannot write '${opts.output}': ${msg}\n`);
-      process.exit(1);
-    }
-    process.stderr.write(`Wrote ${opts.output}\n`);
-    return;
-  }
-
-  process.stdout.write(serialized);
+  return aer;
 }
 
-function readFileIfExists(path: string): string | undefined {
-  return existsSync(path) ? readFileSync(path, "utf8") : undefined;
+function findJsonlFiles(dir: string): string[] {
+  const found: string[] = [];
+  const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  for (const entry of entries) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      found.push(...findJsonlFiles(path));
+    } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+      found.push(path);
+    }
+  }
+  return found.sort((a, b) => a.localeCompare(b));
+}
+
+function safeRelativeStem(root: string, file: string): string {
+  const relativePath = relative(root, file).replace(/\.jsonl$/, "");
+  return relativePath.split(sep).join("__");
+}
+
+function writeOutput(output: string, serialized: string): void {
+  try {
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, serialized);
+  } catch (err) {
+    fail(`cannot write '${output}': ${errorMessage(err)}`);
+  }
+  process.stderr.write(`Wrote ${output}\n`);
 }

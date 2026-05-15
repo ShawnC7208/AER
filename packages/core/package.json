@@ -1,9 +1,22 @@
 {
   "name": "@aer/core",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "AER schema, types, hashing, and diff utilities.",
   "license": "Apache-2.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShawnC7208/AER.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/ShawnC7208/AER#readme",
+  "bugs": {
+    "url": "https://github.com/ShawnC7208/AER/issues"
+  },
+  "keywords": ["agent", "audit", "execution-record", "aer", "schema"],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

@@ -1,7 +1,8 @@
 # AER
 
-> Status: Phase 2 implemented. The deterministic Claude Code JSONL converter,
-> CLI viewer, and offline static demo can render local AER records.
+> Status: Phase 3 implemented. The deterministic Claude Code JSONL converter,
+> CLI viewer, offline static demo, multi-input CLI, watch mode, summaries, and
+> schema validation can render and inspect local AER records.
 
 AER turns raw agent logs into auditable, skimmable Agent Execution Records. The first
 adapter targets Claude Code JSONL sessions and produces deterministic AER JSON with
@@ -21,14 +22,18 @@ Install pnpm if needed:
 npm install -g pnpm@9.15.4
 ```
 
-This repo uses pnpm workspaces. Published packages will be installable with npm later,
-but local development should use pnpm.
+This repo uses pnpm workspaces for local development. The CLI is published for npm
+global installs:
+
+```sh
+npm install -g @aer/cli
+```
 
 ## Packages
 
 - `@aer/core` — AER v1 TypeScript types, zod schema, hashing, and unified diffs.
 - `@aer/adapter-claude-code` — Claude Code JSONL to AER conversion.
-- `@aer/cli` — `aer convert` and `aer view` commands.
+- `@aer/cli` — `aer convert`, `aer view`, `aer summary`, and `aer validate`.
 - `@aer/viewer` — deterministic, self-contained HTML renderer and browser demo bundle.
 - `@aer/enrich` — placeholder for the Phase 6 optional LLM enrichment package.
 
@@ -38,6 +43,8 @@ but local development should use pnpm.
 pnpm install
 pnpm aer convert examples/daily-research.jsonl -o examples/daily-research.aer.json
 pnpm aer view examples/daily-research.jsonl -o examples/daily-research.aer.html
+pnpm aer summary examples/daily-research.jsonl
+pnpm aer validate examples/daily-research.aer.json
 ```
 
 The checked-in JSONL examples are sanitized fixtures. Keep public fixtures free of
@@ -48,6 +55,7 @@ Convert one of your local Claude Code sessions:
 ```sh
 pnpm aer convert ~/.claude/projects/<project-dir>/<session-id>.jsonl -o examples/my-run.aer.json
 pnpm aer view ~/.claude/projects/<project-dir>/<session-id>.jsonl -o examples/my-run.aer.html
+pnpm aer view ~/.claude/projects/<project-dir>/<session-id>.jsonl --watch --open
 ```
 
 `pnpm aer` builds the CLI and then runs the compiled command from the repo root, so
@@ -56,19 +64,30 @@ relative input and output paths are resolved from the project root.
 ## CLI
 
 ```sh
-pnpm aer convert <input.jsonl> [-o output.aer.json] [--with-disk]
-pnpm aer view <input.jsonl|input.aer.json> [-o output.html] [--open]
+pnpm aer convert <input.jsonl|directory> [-o output] [--with-disk]
+pnpm aer view <input.jsonl|input.aer.json> [-o output.html] [--open] [--watch]
+pnpm aer summary <input.jsonl|input.aer.json>
+pnpm aer validate <input.aer.json>
 ```
 
 Options:
 
-- `-o, --output` writes the AER JSON to a file. Parent folders are created if needed.
+- `aer convert` accepts a single `.jsonl` file or a directory. Directory input scans
+  recursively for `.jsonl` files, writes one `.aer.json` per input, and defaults to
+  `./aer-out/`.
+- `-o, --output` writes single-file output to a file. For directory conversion it is
+  treated as an output directory.
 - `--with-disk` allows the adapter to read files from disk when the trace lacks prior
   file content for mutation diffs. Relative file paths are resolved from the source
   record's `cwd` when it is available.
 - `aer view` renders a self-contained static HTML file. JSONL inputs are converted
   first; `.aer.json` inputs are parsed and rendered directly.
 - `--open` opens the rendered HTML in the system browser.
+- `--watch` re-renders a single input file when it changes and keeps watching after
+  transient render failures.
+- `aer summary` prints deterministic run metrics, mutation counts, and files touched.
+- `aer validate` checks an AER JSON file against the v1 schema and prints readable
+  schema errors.
 
 Generated files matching `examples/*.aer.json`, `examples/*.aer.html`, and
 `examples/dist/` are ignored by git. The GitHub Pages workflow rebuilds the browser
@@ -120,7 +139,7 @@ pnpm --filter @aer/viewer build:web
 ## Roadmap
 
 - Phase 2: static HTML viewer and drag/drop demo. Implemented.
-- Phase 3: CLI polish, multi-input, watch mode.
+- Phase 3: CLI polish, multi-input, watch mode, npm release. Implemented.
 - Phase 4: heuristic phase detection and verification rollup.
 - Phase 5: integrity verification.
 - Phase 6: optional LLM enrichment.

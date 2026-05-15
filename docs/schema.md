@@ -18,9 +18,10 @@ The top-level fields are:
 - `costs`
 - `raw`
 
-Phase 1 emits deterministic records only:
+The deterministic converter currently emits:
 
-- `phases` contains one placeholder phase named `Phase 1`.
+- `phases` inferred from action transitions such as setup, local context,
+  implementation, verification-like activity, git activity, and wrap-up signals.
 - `verification` is empty until deterministic verification detection lands in Phase 4.
 - `claims` is empty until optional LLM enrichment lands in Phase 6.
 - `gates` is empty until richer approval extraction lands later.

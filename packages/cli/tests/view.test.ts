@@ -41,20 +41,46 @@ describe("@aer/cli view", () => {
     const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 
     expect(() => runView(input)).toThrow("exit:1");
-    expect(stderr.mock.calls.join("")).toContain("aer: render failed:");
+    expect(stderr.mock.calls.join("")).toContain("aer: render failed for");
 
     exit.mockRestore();
     stderr.mockRestore();
   });
+
+  it("watches a file and re-renders after changes", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "aer-view-watch-"));
+    const input = join(dir, "input.jsonl");
+    const output = join(dir, "output.html");
+    writeFileSync(input, jsonl("first render"));
+
+    const watcher = runView(input, { output, watch: true, debounceMs: 10 });
+    try {
+      expect(readFileSync(output, "utf8")).toContain("first render");
+
+      writeFileSync(input, jsonl("second render"));
+      await waitFor(() => readFileSync(output, "utf8").includes("second render"));
+    } finally {
+      watcher?.close();
+    }
+  });
 });
 
-function jsonl(): string {
+function jsonl(goal = "render this"): string {
   return [
     JSON.stringify({
       type: "user",
       timestamp: "2026-01-01T00:00:00.000Z",
       sessionId: "sample-session",
-      message: { role: "user", content: "render this" },
+      message: { role: "user", content: goal },
     }),
   ].join("\n");
+}
+
+async function waitFor(predicate: () => boolean): Promise<void> {
+  const started = Date.now();
+  while (Date.now() - started < 1000) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error("Timed out waiting for condition");
 }
