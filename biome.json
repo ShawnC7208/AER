@@ -24,8 +24,10 @@
       "coverage",
       "node_modules",
       "DesignDocs",
+      ".claude",
       "examples/*.aer.json",
-      "examples/*.aer.html"
+      "examples/*.aer.html",
+      "examples/dist"
     ]
   }
 }

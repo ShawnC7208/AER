@@ -1,7 +1,7 @@
 {
   "name": "@aer/viewer",
   "version": "0.1.0",
-  "description": "Static AER viewer placeholder.",
+  "description": "Static, deterministic HTML renderer for AER records.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,10 +15,16 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:web": "node scripts/build-web.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
   },
   "dependencies": {
     "@aer/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@aer/adapter-claude-code": "workspace:*",
+    "esbuild": "^0.21.5",
+    "vitest": "^2.1.8"
   }
 }

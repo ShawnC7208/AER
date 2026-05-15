@@ -25,6 +25,7 @@
   "dependencies": {
     "@aer/adapter-claude-code": "workspace:*",
     "@aer/core": "workspace:*",
+    "@aer/viewer": "workspace:*",
     "commander": "^12.1.0"
   },
   "devDependencies": {

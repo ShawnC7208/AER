@@ -1,3 +1,2 @@
-export function renderHTML(): string {
-  throw new Error("@aer/viewer rendering starts in Phase 2.");
-}
+export { renderHTML } from "./render.js";
+export type { AER } from "@aer/core";

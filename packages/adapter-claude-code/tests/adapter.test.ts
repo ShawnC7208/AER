@@ -16,6 +16,9 @@ describe("@aer/adapter-claude-code", () => {
     expect(aer.run.id).toBe("0e6b3764-b28d-4fab-b513-d01d2cb00bed");
     expect(aer.run.mode).toBe("scheduled");
     expect(aer.raw.recordCount).toBe(67);
+    expect(aer.phases.length).toBeGreaterThan(1);
+    expect(aer.phases.map((phase) => phase.name)).toContain("Research");
+    expect(aer.phases.map((phase) => phase.name)).toContain("Synthesize");
     expect(aer.mutations).toHaveLength(2);
     expect(aer.filesTouched).toHaveLength(2);
     expect(aer.verification).toHaveLength(0);
@@ -29,6 +32,7 @@ describe("@aer/adapter-claude-code", () => {
     const aer = parseAER(convert(jsonl));
 
     expect(aer.mutations).toHaveLength(2);
+    expect(aer.phases.length).toBeGreaterThan(1);
     expect(aer.filesTouched.map((file) => file.path)).toEqual(["src/slug.ts", "src/index.ts"]);
     expect(aer.verification).toHaveLength(0);
   });
@@ -249,7 +253,12 @@ describe("@aer/adapter-claude-code", () => {
       .map((record) => JSON.stringify(record))
       .join("\n");
 
-    const aer = parseAER(convert(jsonl, { withDisk: true }));
+    const aer = parseAER(
+      convert(jsonl, {
+        withDisk: true,
+        readFile: (path) => readFileSync(path, "utf8"),
+      }),
+    );
     expect(aer.mutations[0]?.beforeHash).toBeDefined();
     expect(aer.mutations[0]?.afterHash).toBeDefined();
     expect(aer.mutations[0]?.diff).toContain("new");
