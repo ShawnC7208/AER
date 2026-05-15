@@ -4,6 +4,7 @@ import { parseAER, sha256, unifiedDiff } from "../src/index.js";
 describe("@aer/core", () => {
   it("hashes deterministically", () => {
     expect(sha256("aer")).toBe(sha256(Buffer.from("aer")));
+    expect(sha256("aer")).toBe("300859e050ee53855c5f12c72ff69bb0bbcd1d9415d4b4e7a076249fca6a2511");
   });
 
   it("returns unified diff stats", () => {

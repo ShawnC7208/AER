@@ -249,7 +249,12 @@ describe("@aer/adapter-claude-code", () => {
       .map((record) => JSON.stringify(record))
       .join("\n");
 
-    const aer = parseAER(convert(jsonl, { withDisk: true }));
+    const aer = parseAER(
+      convert(jsonl, {
+        withDisk: true,
+        readFile: (path) => readFileSync(path, "utf8"),
+      }),
+    );
     expect(aer.mutations[0]?.beforeHash).toBeDefined();
     expect(aer.mutations[0]?.afterHash).toBeDefined();
     expect(aer.mutations[0]?.diff).toContain("new");

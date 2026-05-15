@@ -8,6 +8,7 @@ import { summarizeContent, summarizeToolInput, targetForTool, trim } from "./sum
 export interface ConvertOptions {
   withDisk?: boolean;
   rawPath?: string;
+  readFile?: (path: string) => string | undefined;
 }
 
 interface ActionBuildResult {

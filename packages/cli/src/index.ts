@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { runConvert } from "./commands/convert.js";
+import { runView } from "./commands/view.js";
 
 const program = new Command();
 
@@ -18,6 +19,18 @@ program
     runConvert(input, {
       ...(options.output ? { output: options.output } : {}),
       ...(options.withDisk ? { withDisk: true } : {}),
+    });
+  });
+
+program
+  .command("view")
+  .argument("<input>", "Claude Code JSONL or AER JSON file")
+  .option("-o, --output <output.html>", "write rendered HTML to a file")
+  .option("--open", "open the rendered HTML in the system browser")
+  .action((input: string, options: { output?: string; open?: boolean }) => {
+    runView(input, {
+      ...(options.output ? { output: options.output } : {}),
+      ...(options.open ? { open: true } : {}),
     });
   });
 

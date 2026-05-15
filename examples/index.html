@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AER Viewer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #fbfaf6;
+    --ink: #1a1a1a;
+    --ink-2: #555;
+    --ink-3: #8a8780;
+    --line: #ece9df;
+    --attn: #b86b00;
+    --attn-bg: #fdf2dc;
+    --ok: #2d6a4a;
+    --ok-bg: #e6f0e9;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    --code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .shell { max-width: 980px; margin: 0 auto; padding: 56px 28px 80px; }
+  .logo { font-weight: 600; margin-bottom: 28px; }
+  .logo span { color: var(--attn); margin-right: 4px; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.015em; margin: 0 0 14px; }
+  .lead { color: var(--ink-2); font-size: 16px; max-width: 680px; margin: 0 0 28px; }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+  button {
+    border: 1px solid var(--line);
+    background: white;
+    color: var(--ink);
+    padding: 9px 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+  }
+  button.primary { background: var(--ink); color: white; border-color: var(--ink); }
+  .dropzone {
+    border: 1px dashed var(--ink-3);
+    background: white;
+    border-radius: 6px;
+    padding: 34px;
+    margin: 22px 0 14px;
+    cursor: pointer;
+  }
+  .dropzone[data-active="true"] { border-color: var(--attn); background: var(--attn-bg); }
+  .dropzone strong { display: block; font-size: 16px; margin-bottom: 4px; }
+  .muted { color: var(--ink-3); }
+  .privacy {
+    color: var(--ok);
+    background: var(--ok-bg);
+    border-left: 2px solid var(--ok);
+    padding: 10px 14px;
+    margin-bottom: 18px;
+  }
+  .status { color: var(--ink-3); font-family: var(--code); font-size: 12px; margin: 14px 0; }
+  .status[data-error="true"] { color: var(--attn); }
+  iframe {
+    width: 100%;
+    min-height: 760px;
+    border: 1px solid var(--line);
+    background: white;
+    border-radius: 4px;
+    margin-top: 18px;
+  }
+</style>
+</head>
+<body>
+<main class="shell">
+  <div class="logo"><span>●</span>AER</div>
+  <h1>Drop in an agent log. Get a readable execution record.</h1>
+  <p class="lead">AER turns Claude Code JSONL sessions into auditable, static HTML. The viewer runs locally in your browser and does not upload your file.</p>
+  <div class="actions">
+    <button class="primary" data-example type="button">Try the example</button>
+    <button type="button" onclick="document.querySelector('[data-file-input]').click()">Choose a file</button>
+  </div>
+  <div class="privacy">Your file is parsed in your browser. Nothing is uploaded.</div>
+  <section class="dropzone" data-dropzone>
+    <strong>Drop a Claude Code JSONL or AER JSON file here</strong>
+    <span class="muted">Click the box to pick a file instead.</span>
+  </section>
+  <input data-file-input type="file" accept=".jsonl,.json,.aer.json,application/json" hidden />
+  <div class="status" data-status>Waiting for a file.</div>
+  <iframe data-output title="Rendered AER" hidden></iframe>
+</main>
+<script type="module" src="./dist/browser.js"></script>
+</body>
+</html>

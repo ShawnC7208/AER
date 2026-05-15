@@ -39,6 +39,9 @@ importers:
       '@aer/core':
         specifier: workspace:*
         version: link:../core
+      '@aer/viewer':
+        specifier: workspace:*
+        version: link:../viewer
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -71,6 +74,16 @@ importers:
       '@aer/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
+      '@aer/adapter-claude-code':
+        specifier: workspace:*
+        version: link:../adapter-claude-code
+      esbuild:
+        specifier: ^0.21.5
+        version: 0.21.5
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@20.19.40)
 
 packages:
 

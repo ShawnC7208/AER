@@ -13,6 +13,7 @@ DesignDocs/
 # Generated AER outputs
 examples/*.aer.json
 examples/*.aer.html
+examples/dist/
 aer-out/
 
 # Local-only test fixtures and helper scripts — never committed

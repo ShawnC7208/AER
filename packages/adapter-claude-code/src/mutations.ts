@@ -1,5 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, resolve } from "node:path";
 import { type Action, type Mutation, sha256, unifiedDiff } from "@aer/core";
 import { type ClaudeRecord, objectValue, stringValue } from "./parse.js";
 
@@ -19,7 +17,7 @@ export interface ToolActionContext {
 export function extractMutations(
   toolActions: ToolActionContext[],
   records: ClaudeRecord[],
-  opts: { withDisk?: boolean } = {},
+  opts: { withDisk?: boolean; readFile?: (path: string) => string | undefined } = {},
 ): MutationResult {
   const reads = collectReadContents(toolActions, records);
   const toolResults = collectToolResults(records);
@@ -56,11 +54,11 @@ export function extractMutations(
 
     if (before !== undefined) {
       mutation.beforeHash = sha256(before);
-      mutation.beforeBytes = Buffer.byteLength(before);
+      mutation.beforeBytes = byteLength(before);
     }
     if (after !== undefined) {
       mutation.afterHash = sha256(after);
-      mutation.afterBytes = Buffer.byteLength(after);
+      mutation.afterBytes = byteLength(after);
     }
     if (before !== undefined && after !== undefined && isTextDiffable(before, after)) {
       const result = unifiedDiff(before, after);
@@ -138,7 +136,7 @@ function beforeContent(
   toolAction: ToolActionContext,
   reads: Map<string, { recordIndex: number; content: string }[]>,
   toolResults: Map<string, Record<string, unknown>>,
-  opts: { withDisk?: boolean },
+  opts: { withDisk?: boolean; readFile?: (path: string) => string | undefined },
 ): string | undefined {
   const fromRead = reads
     .get(target)
@@ -150,8 +148,8 @@ function beforeContent(
   if (typeof toolUseResult?.originalFile === "string") return toolUseResult.originalFile;
 
   const cwd = stringValue(toolAction.record.raw.cwd);
-  const diskPath = isAbsolute(target) || !cwd ? target : resolve(cwd, target);
-  if (opts.withDisk && existsSync(diskPath)) return readFileSync(diskPath, "utf8");
+  const diskPath = isAbsolutePath(target) || !cwd ? target : joinPath(cwd, target);
+  if (opts.withDisk && opts.readFile) return opts.readFile(diskPath);
   return undefined;
 }
 
@@ -188,7 +186,7 @@ function mutationKind(name: string): Mutation["kind"] {
 }
 
 function isTextDiffable(before: string, after: string): boolean {
-  return Buffer.byteLength(before) <= 1024 * 1024 && Buffer.byteLength(after) <= 1024 * 1024;
+  return byteLength(before) <= 1024 * 1024 && byteLength(after) <= 1024 * 1024;
 }
 
 function countLines(content: string): number {
@@ -201,4 +199,16 @@ function stripLineNumbers(content: string): string {
     .split(/\r?\n/)
     .map((line) => line.replace(/^\s*\d+\t/, ""))
     .join("\n");
+}
+
+function byteLength(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+function isAbsolutePath(path: string): boolean {
+  return path.startsWith("/") || /^[A-Za-z]:[\\/]/.test(path);
+}
+
+function joinPath(base: string, target: string): string {
+  return `${base.replace(/[\\/]+$/, "")}/${target.replace(/^[\\/]+/, "")}`;
 }

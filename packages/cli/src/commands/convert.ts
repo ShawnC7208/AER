@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { convert } from "@aer/adapter-claude-code";
 import { parseAER } from "@aer/core";
@@ -23,6 +23,7 @@ export function runConvert(input: string, opts: ConvertCommandOptions = {}): voi
     const convertOptions = {
       rawPath: basename(input),
       ...(opts.withDisk ? { withDisk: true } : {}),
+      ...(opts.withDisk ? { readFile: readFileIfExists } : {}),
     };
     aer = parseAER(convert(jsonl, convertOptions));
   } catch (err) {
@@ -47,4 +48,8 @@ export function runConvert(input: string, opts: ConvertCommandOptions = {}): voi
   }
 
   process.stdout.write(serialized);
+}
+
+function readFileIfExists(path: string): string | undefined {
+  return existsSync(path) ? readFileSync(path, "utf8") : undefined;
 }

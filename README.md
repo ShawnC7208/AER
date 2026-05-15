@@ -1,14 +1,14 @@
 # AER
 
-> Status: early Phase 1. The deterministic Claude Code JSONL converter works; the
-> static viewer and LLM enrichment are still placeholders.
+> Status: Phase 2 in progress. The deterministic Claude Code JSONL converter works,
+> and the static HTML viewer can render local AER records.
 
 AER turns raw agent logs into auditable, skimmable Agent Execution Records. The first
 adapter targets Claude Code JSONL sessions and produces deterministic AER JSON with
 tool actions, mutation detection, file rollups, hashes, and diffs.
 
-The deterministic core has no network or LLM dependency. Optional enrichment and the
-HTML viewer come later.
+The deterministic core and static viewer have no network or LLM dependency. Optional
+enrichment comes later.
 
 ## Requirements
 
@@ -28,8 +28,8 @@ but local development should use pnpm.
 
 - `@aer/core` — AER v1 TypeScript types, zod schema, hashing, and unified diffs.
 - `@aer/adapter-claude-code` — Claude Code JSONL to AER conversion.
-- `@aer/cli` — `aer convert` command.
-- `@aer/viewer` — placeholder for the Phase 2 static viewer.
+- `@aer/cli` — `aer convert` and `aer view` commands.
+- `@aer/viewer` — static, self-contained HTML renderer.
 - `@aer/enrich` — placeholder for the Phase 6 optional LLM enrichment package.
 
 ## Quick Start
@@ -37,6 +37,7 @@ but local development should use pnpm.
 ```sh
 pnpm install
 pnpm aer convert examples/daily-research.jsonl -o examples/daily-research.aer.json
+pnpm aer view examples/daily-research.jsonl -o examples/daily-research.aer.html
 ```
 
 The checked-in JSONL examples are sanitized fixtures. Keep public fixtures free of
@@ -46,6 +47,7 @@ Convert one of your local Claude Code sessions:
 
 ```sh
 pnpm aer convert ~/.claude/projects/<project-dir>/<session-id>.jsonl -o examples/my-run.aer.json
+pnpm aer view ~/.claude/projects/<project-dir>/<session-id>.jsonl -o examples/my-run.aer.html
 ```
 
 `pnpm aer` builds the CLI and then runs the compiled command from the repo root, so
@@ -55,6 +57,7 @@ relative input and output paths are resolved from the project root.
 
 ```sh
 pnpm aer convert <input.jsonl> [-o output.aer.json] [--with-disk]
+pnpm aer view <input.jsonl|input.aer.json> [-o output.html] [--open]
 ```
 
 Options:
@@ -63,6 +66,9 @@ Options:
 - `--with-disk` allows the adapter to read files from disk when the trace lacks prior
   file content for mutation diffs. Relative file paths are resolved from the source
   record's `cwd` when it is available.
+- `aer view` renders a self-contained static HTML file. JSONL inputs are converted
+  first; `.aer.json` inputs are parsed and rendered directly.
+- `--open` opens the rendered HTML in the system browser.
 
 Generated files matching `examples/*.aer.json` and `examples/*.aer.html` are ignored
 by git.
@@ -104,6 +110,7 @@ Useful direct package commands:
 pnpm --filter @aer/core test
 pnpm --filter @aer/adapter-claude-code test
 pnpm --filter @aer/cli build
+pnpm --filter @aer/viewer build:web
 ```
 
 ## Roadmap
