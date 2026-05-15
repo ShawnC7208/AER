@@ -11,6 +11,8 @@ describe("@aer/viewer", () => {
     expect(html).toContain("Files Touched");
     expect(html).toContain("Mutations");
     expect(html).toContain("hello.ts");
+    expect(html).toContain("Raw action timeline");
+    expect(html).toContain("\u2190 MUTATION");
   });
 
   it("escapes log content before rendering", () => {
