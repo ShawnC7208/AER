@@ -1,7 +1,7 @@
 # AER
 
-> Status: Phase 2 in progress. The deterministic Claude Code JSONL converter works,
-> and the static HTML viewer can render local AER records.
+> Status: Phase 2 implemented. The deterministic Claude Code JSONL converter,
+> CLI viewer, and offline static demo can render local AER records.
 
 AER turns raw agent logs into auditable, skimmable Agent Execution Records. The first
 adapter targets Claude Code JSONL sessions and produces deterministic AER JSON with
@@ -29,7 +29,7 @@ but local development should use pnpm.
 - `@aer/core` — AER v1 TypeScript types, zod schema, hashing, and unified diffs.
 - `@aer/adapter-claude-code` — Claude Code JSONL to AER conversion.
 - `@aer/cli` — `aer convert` and `aer view` commands.
-- `@aer/viewer` — static, self-contained HTML renderer.
+- `@aer/viewer` — deterministic, self-contained HTML renderer and browser demo bundle.
 - `@aer/enrich` — placeholder for the Phase 6 optional LLM enrichment package.
 
 ## Quick Start
@@ -70,15 +70,17 @@ Options:
   first; `.aer.json` inputs are parsed and rendered directly.
 - `--open` opens the rendered HTML in the system browser.
 
-Generated files matching `examples/*.aer.json` and `examples/*.aer.html` are ignored
-by git.
+Generated files matching `examples/*.aer.json`, `examples/*.aer.html`, and
+`examples/dist/` are ignored by git. The GitHub Pages workflow rebuilds the browser
+bundle from source before publishing `examples/`.
 
 ## Current Output
 
-Phase 1 emits:
+AER v1 currently emits:
 
 - `run`
-- a single placeholder phase named `Phase 1`
+- deterministic `phases` inferred from setup, local context, implementation,
+  verification-like actions, git activity, and wrap-up signals
 - `actions`
 - `mutations`
 - `filesTouched`
@@ -93,7 +95,9 @@ Phase 1 intentionally leaves these empty:
 - `gates` — richer permission/approval extraction lands later.
 
 Unknown record and tool shapes are preserved as neutral `other` actions instead of
-crashing the converter.
+crashing the converter. The static viewer renders only sections with data, groups
+long action runs behind progressive disclosure, highlights mutations, and includes a
+raw action timeline for deeper inspection.
 
 ## Development
 
@@ -115,7 +119,7 @@ pnpm --filter @aer/viewer build:web
 
 ## Roadmap
 
-- Phase 2: static HTML viewer and drag/drop demo.
+- Phase 2: static HTML viewer and drag/drop demo. Implemented.
 - Phase 3: CLI polish, multi-input, watch mode.
 - Phase 4: heuristic phase detection and verification rollup.
 - Phase 5: integrity verification.

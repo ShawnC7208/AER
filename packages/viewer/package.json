@@ -1,7 +1,7 @@
 {
   "name": "@aer/viewer",
   "version": "0.1.0",
-  "description": "Static AER viewer placeholder.",
+  "description": "Static, deterministic HTML renderer for AER records.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
