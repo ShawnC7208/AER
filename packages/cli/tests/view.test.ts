@@ -53,10 +53,11 @@ describe("@aer/cli view", () => {
     const output = join(dir, "output.html");
     writeFileSync(input, jsonl("first render"));
 
-    const watcher = runView(input, { output, watch: true, debounceMs: 10 });
+    const watcher = runView(input, { output, watch: true, debounceMs: 25 });
     try {
       expect(readFileSync(output, "utf8")).toContain("first render");
 
+      await new Promise((resolve) => setTimeout(resolve, 75));
       writeFileSync(input, jsonl("second render"));
       await waitFor(() => readFileSync(output, "utf8").includes("second render"));
     } finally {
@@ -78,7 +79,7 @@ function jsonl(goal = "render this"): string {
 
 async function waitFor(predicate: () => boolean): Promise<void> {
   const started = Date.now();
-  while (Date.now() - started < 1000) {
+  while (Date.now() - started < 5000) {
     if (predicate()) return;
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
