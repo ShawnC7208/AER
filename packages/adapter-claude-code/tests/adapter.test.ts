@@ -3,7 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseAER } from "@aer/core";
 import { describe, expect, it } from "vitest";
-import { classifyTool, convert, isMutating, rollupFilesTouched } from "../src/index.js";
+import {
+  classifyTool,
+  classifyVerificationCommand,
+  convert,
+  isMutating,
+  rollupFilesTouched,
+} from "../src/index.js";
 
 const fixtureDir = join(import.meta.dirname, "..", "fixtures");
 
@@ -33,8 +39,22 @@ describe("@aer/adapter-claude-code", () => {
 
     expect(aer.mutations).toHaveLength(2);
     expect(aer.phases.length).toBeGreaterThan(1);
+    expect(aer.phases.map((phase) => phase.name)).toContain("Verify");
     expect(aer.filesTouched.map((file) => file.path)).toEqual(["src/slug.ts", "src/index.ts"]);
-    expect(aer.verification).toHaveLength(0);
+    expect(aer.verification).toHaveLength(3);
+    expect(aer.verification.map((check) => check.kind)).toEqual(["test", "typecheck", "lint"]);
+    expect(aer.verification[0]).toMatchObject({
+      kind: "test",
+      command: "pnpm test",
+      outcome: "recovered",
+      attempts: [
+        { actionId: "a8", outcome: "failed" },
+        { actionId: "a10", outcome: "failed" },
+        { actionId: "a12", outcome: "passed" },
+      ],
+      finalActionId: "a12",
+      detail: "3 passed",
+    });
   });
 
   it("preserves unknown tools as non-mutating other actions", () => {
@@ -271,6 +291,23 @@ describe("@aer/adapter-claude-code", () => {
     expect(isMutating("Write", {})).toBe(true);
     expect(isMutating("Bash", { command: "ls src" })).toBe(false);
     expect(isMutating("Bash", { command: "mkdir dist" })).toBe(true);
+  });
+
+  it("classifies verification commands conservatively", () => {
+    const action = {
+      id: "a1",
+      recordIndex: 0,
+      ts: "2026-01-01T00:00:00.000Z",
+      kind: "other" as const,
+      toolName: "Bash",
+      mutates: false,
+      inputSummary: "pnpm typecheck",
+      phaseId: "p1",
+      errored: false,
+    };
+
+    expect(classifyVerificationCommand(action)).toBe("typecheck");
+    expect(classifyVerificationCommand({ ...action, inputSummary: "ls src" })).toBeUndefined();
   });
 
   it("rolls files up deterministically", () => {

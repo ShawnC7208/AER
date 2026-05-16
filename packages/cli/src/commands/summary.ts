@@ -16,6 +16,7 @@ export function runSummary(input: string): void {
     `Phases: ${aer.phases.length}`,
     `Tool calls: ${aer.costs.toolCalls}`,
     `Errors: ${aer.costs.errors}`,
+    `Verification: ${aer.verification.length}`,
     `Mutations: ${aer.mutations.length}`,
     `Files touched: ${aer.filesTouched.length}`,
   ];

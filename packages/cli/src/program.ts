@@ -10,7 +10,7 @@ export function createProgram(): Command {
   program
     .name("aer")
     .description("Convert agent logs into auditable Agent Execution Records.")
-    .version("0.3.0");
+    .version("0.4.0");
 
   program
     .command("convert")

@@ -5,6 +5,7 @@ import { type ToolActionContext, extractMutations } from "./mutations.js";
 import { arrayValue, objectValue, parseJsonl, stringValue } from "./parse.js";
 import { buildPhases } from "./phases.js";
 import { summarizeContent, summarizeToolInput, targetForTool, trim } from "./summarize.js";
+import { buildVerification } from "./verification.js";
 
 export interface ConvertOptions {
   withDisk?: boolean;
@@ -23,6 +24,7 @@ export function convert(jsonl: string, opts: ConvertOptions = {}): AER {
   const startedAt = firstTimestamp(records);
   const endedAt = lastTimestamp(records);
   const phases = buildPhases(actions, startedAt, endedAt);
+  const verification = buildVerification(actions);
   const mutationResult = extractMutations(toolActions, records, opts);
   const filesTouched = rollupFilesTouched(mutationResult.mutations);
   const toolCallBreakdown = toolActions.reduce<Record<string, number>>((acc, toolAction) => {
@@ -72,7 +74,7 @@ export function convert(jsonl: string, opts: ConvertOptions = {}): AER {
     actions,
     mutations: mutationResult.mutations,
     filesTouched,
-    verification: [],
+    verification,
     claims: [],
     gates: [],
     artifacts: buildArtifacts(mutationResult.mutations),

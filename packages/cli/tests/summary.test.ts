@@ -18,6 +18,7 @@ describe("@aer/cli summary", () => {
     expect(output).toContain("AER Summary: summarize this");
     expect(output).toContain("Run: sample-session");
     expect(output).toContain("Tool calls: 0");
+    expect(output).toContain("Verification: 0");
     stdout.mockRestore();
   });
 

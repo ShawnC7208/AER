@@ -1,8 +1,9 @@
 # AER
 
-> Status: Phase 3 implemented. The deterministic Claude Code JSONL converter,
+> Status: Phase 4 implemented. The deterministic Claude Code JSONL converter,
 > CLI viewer, offline static demo, multi-input CLI, watch mode, summaries, and
-> schema validation can render and inspect local AER records.
+> schema validation can render and inspect local AER records with verification
+> rollups.
 
 AER turns raw agent logs into auditable, skimmable Agent Execution Records. The first
 adapter targets Claude Code JSONL sessions and produces deterministic AER JSON with
@@ -98,8 +99,8 @@ bundle from source before publishing `examples/`.
 AER v1 currently emits:
 
 - `run`
-- deterministic `phases` inferred from setup, local context, implementation,
-  verification-like actions, git activity, and wrap-up signals
+- deterministic `phases` inferred from setup, local context, research,
+  implementation, verification, and wrap-up signals
 - `actions`
 - `mutations`
 - `filesTouched`
@@ -107,9 +108,8 @@ AER v1 currently emits:
 - `costs`
 - `raw`
 
-Phase 1 intentionally leaves these empty:
+Current deterministic limits:
 
-- `verification` — deterministic verification rollup lands in Phase 4.
 - `claims` — LLM-derived claims land in Phase 6.
 - `gates` — richer permission/approval extraction lands later.
 
@@ -117,6 +117,9 @@ Unknown record and tool shapes are preserved as neutral `other` actions instead 
 crashing the converter. The static viewer renders only sections with data, groups
 long action runs behind progressive disclosure, highlights mutations, and includes a
 raw action timeline for deeper inspection.
+
+See [`docs/phase-detection.md`](docs/phase-detection.md) for the deterministic
+phase and verification heuristics.
 
 ## Development
 
@@ -140,6 +143,6 @@ pnpm --filter @aer/viewer build:web
 
 - Phase 2: static HTML viewer and drag/drop demo. Implemented.
 - Phase 3: CLI polish, multi-input, watch mode, npm release. Implemented.
-- Phase 4: heuristic phase detection and verification rollup.
+- Phase 4: heuristic phase detection and verification rollup. Implemented.
 - Phase 5: integrity verification.
 - Phase 6: optional LLM enrichment.

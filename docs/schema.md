@@ -20,8 +20,9 @@ The top-level fields are:
 
 The deterministic converter currently emits:
 
-- `phases` inferred from action transitions such as setup, local context,
-  implementation, verification-like activity, git activity, and wrap-up signals.
-- `verification` is empty until deterministic verification detection lands in Phase 4.
+- `phases` inferred from action transitions such as setup, local context, research,
+  implementation, verification, and wrap-up signals.
+- `verification` is populated from recognized Bash test, typecheck, lint, build,
+  and format commands.
 - `claims` is empty until optional LLM enrichment lands in Phase 6.
 - `gates` is empty until richer approval extraction lands later.

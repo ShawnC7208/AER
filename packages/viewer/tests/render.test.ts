@@ -35,6 +35,31 @@ describe("@aer/viewer", () => {
     expect(html).not.toContain('id="verification"');
     expect(html).not.toContain('id="claims"');
   });
+
+  it("renders verification checks when present", () => {
+    const aer = sampleAer({
+      verification: [
+        {
+          id: "v1",
+          kind: "test",
+          command: "pnpm test",
+          outcome: "recovered",
+          detail: "3 passed",
+          attempts: [
+            { actionId: "a1", outcome: "failed" },
+            { actionId: "a1", outcome: "passed" },
+          ],
+          finalActionId: "a1",
+        },
+      ],
+    });
+
+    const html = renderHTML(aer);
+
+    expect(html).toContain('id="verification"');
+    expect(html).toContain("pnpm test");
+    expect(html).toContain("3 passed");
+  });
 });
 
 function sampleAer(overrides: Partial<AER> = {}): AER {
