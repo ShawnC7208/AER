@@ -1,9 +1,17 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseAER } from "@aer/core";
+import { parseAER, sha256 } from "@aer/core";
 import { describe, expect, it } from "vitest";
-import { classifyTool, convert, isMutating, rollupFilesTouched } from "../src/index.js";
+import {
+  buildPhases,
+  buildVerification,
+  classifyTool,
+  classifyVerificationCommand,
+  convert,
+  isMutating,
+  rollupFilesTouched,
+} from "../src/index.js";
 
 const fixtureDir = join(import.meta.dirname, "..", "fixtures");
 
@@ -25,6 +33,8 @@ describe("@aer/adapter-claude-code", () => {
     expect(aer.claims).toHaveLength(0);
     expect(aer.costs.toolCallBreakdown.Write).toBe(1);
     expect(aer.costs.toolCallBreakdown.Edit).toBe(1);
+    expect(aer.integrity?.algorithm).toBe("sha256");
+    expect(aer.actions[0]?.recordHash).toBe(sha256(jsonl.split(/\r?\n/)[0] ?? ""));
   });
 
   it("converts a synthetic coding fixture", () => {
@@ -33,8 +43,22 @@ describe("@aer/adapter-claude-code", () => {
 
     expect(aer.mutations).toHaveLength(2);
     expect(aer.phases.length).toBeGreaterThan(1);
+    expect(aer.phases.map((phase) => phase.name)).toContain("Verify");
     expect(aer.filesTouched.map((file) => file.path)).toEqual(["src/slug.ts", "src/index.ts"]);
-    expect(aer.verification).toHaveLength(0);
+    expect(aer.verification).toHaveLength(3);
+    expect(aer.verification.map((check) => check.kind)).toEqual(["test", "typecheck", "lint"]);
+    expect(aer.verification[0]).toMatchObject({
+      kind: "test",
+      command: "pnpm test",
+      outcome: "recovered",
+      attempts: [
+        { actionId: "a8", outcome: "failed" },
+        { actionId: "a10", outcome: "failed" },
+        { actionId: "a12", outcome: "passed" },
+      ],
+      finalActionId: "a12",
+      detail: "3 passed",
+    });
   });
 
   it("preserves unknown tools as non-mutating other actions", () => {
@@ -273,6 +297,90 @@ describe("@aer/adapter-claude-code", () => {
     expect(isMutating("Bash", { command: "mkdir dist" })).toBe(true);
   });
 
+  it("classifies verification commands conservatively", () => {
+    const action = {
+      id: "a1",
+      recordIndex: 0,
+      ts: "2026-01-01T00:00:00.000Z",
+      kind: "other" as const,
+      toolName: "Bash",
+      mutates: false,
+      inputSummary: "pnpm typecheck",
+      phaseId: "p1",
+      errored: false,
+    };
+
+    expect(classifyVerificationCommand(action)).toBe("typecheck");
+    expect(classifyVerificationCommand({ ...action, inputSummary: "ls src" })).toBeUndefined();
+  });
+
+  it("groups recovered verification attempts across intervening edits", () => {
+    const checks = buildVerification([
+      action({
+        id: "a1",
+        toolName: "Bash",
+        inputSummary: "pnpm test",
+        outputSummary: "2 failed, 1 passed",
+      }),
+      action({ id: "a2", toolName: "Edit", kind: "mutate", mutates: true }),
+      action({
+        id: "a3",
+        toolName: "Bash",
+        inputSummary: "pnpm test",
+        outputSummary: "1 failed, 2 passed",
+      }),
+      action({ id: "a4", toolName: "Write", kind: "mutate", mutates: true }),
+      action({ id: "a5", toolName: "Bash", inputSummary: "pnpm test", outputSummary: "3 passed" }),
+    ]);
+
+    expect(checks).toHaveLength(1);
+    expect(checks[0]).toMatchObject({
+      kind: "test",
+      command: "pnpm test",
+      outcome: "recovered",
+      attempts: [
+        { actionId: "a1", outcome: "failed" },
+        { actionId: "a3", outcome: "failed" },
+        { actionId: "a5", outcome: "passed" },
+      ],
+      finalActionId: "a5",
+    });
+  });
+
+  it("treats mixed passed and failed verification output as failed", () => {
+    const checks = buildVerification([
+      action({
+        id: "a1",
+        toolName: "Bash",
+        inputSummary: "pnpm test",
+        outputSummary: "1 failed, 2 passed",
+      }),
+    ]);
+
+    expect(checks[0]?.outcome).toBe("failed");
+    expect(checks[0]?.attempts).toEqual([{ actionId: "a1", outcome: "failed" }]);
+  });
+
+  it("splits phases on same-category time gaps and assistant text turns", () => {
+    const actions = [
+      action({ id: "a1", toolName: "Read", kind: "read", ts: "2026-01-01T00:00:00.000Z" }),
+      action({ id: "a2", toolName: "Read", kind: "read", ts: "2026-01-01T00:00:31.000Z" }),
+      action({
+        id: "a3",
+        toolName: "assistant_text",
+        kind: "report",
+        ts: "2026-01-01T00:00:32.000Z",
+      }),
+      action({ id: "a4", toolName: "Read", kind: "read", ts: "2026-01-01T00:00:33.000Z" }),
+    ];
+
+    const phases = buildPhases(actions, "2026-01-01T00:00:00.000Z", "2026-01-01T00:00:33.000Z");
+
+    expect(phases.map((phase) => phase.actionIds)).toEqual([["a1"], ["a2"], ["a3"], ["a4"]]);
+    expect(phases[1]?.why).toBe("started after 31s gap");
+    expect(phases[2]?.why).toBe("started by tool-kind transition: context -> report");
+  });
+
   it("rolls files up deterministically", () => {
     const files = rollupFilesTouched([
       {
@@ -311,3 +419,18 @@ describe("@aer/adapter-claude-code", () => {
     ]);
   });
 });
+
+function action(overrides: Partial<Parameters<typeof buildVerification>[0][number]>) {
+  return {
+    id: "a1",
+    recordIndex: 0,
+    ts: "2026-01-01T00:00:00.000Z",
+    kind: "other" as const,
+    toolName: "Bash",
+    mutates: false,
+    inputSummary: "",
+    phaseId: "p1",
+    errored: false,
+    ...overrides,
+  };
+}

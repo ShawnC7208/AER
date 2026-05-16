@@ -49,6 +49,7 @@ export const actionSchema = z.object({
   outputSummary: z.string().optional(),
   phaseId: z.string(),
   errored: z.boolean(),
+  recordHash: z.string().optional(),
 });
 
 export const mutationSchema = z.object({
@@ -139,6 +140,18 @@ export const rawRefSchema = z.object({
   sha256: z.string(),
 });
 
+export const signatureBlockSchema = z.object({
+  algorithm: z.literal("Ed25519"),
+  publicKey: z.string(),
+  signature: z.string(),
+});
+
+export const integrityManifestSchema = z.object({
+  algorithm: z.literal("sha256"),
+  aerSha256: z.string(),
+  signature: signatureBlockSchema.optional(),
+});
+
 export const aerSchema = z
   .object({
     version: z.literal("1.0"),
@@ -153,6 +166,7 @@ export const aerSchema = z
     artifacts: z.array(artifactSchema),
     costs: costsSchema,
     raw: rawRefSchema,
+    integrity: integrityManifestSchema.optional(),
   })
   .superRefine((data, ctx) => {
     const phaseIds = new Set(data.phases.map((p) => p.id));

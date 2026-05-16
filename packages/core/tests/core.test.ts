@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAER, sha256, unifiedDiff } from "../src/index.js";
+import { attachIntegrity, parseAER, sha256, unifiedDiff, verifyIntegrity } from "../src/index.js";
 
 describe("@aer/core", () => {
   it("hashes deterministically", () => {
@@ -48,5 +48,47 @@ describe("@aer/core", () => {
         raw: { format: "jsonl", recordCount: 0, sha256: sha256("") },
       }),
     ).not.toThrow();
+  });
+
+  it("attaches and verifies a deterministic integrity manifest", () => {
+    const aer = attachIntegrity({
+      version: "1.0",
+      run: {
+        id: "r1",
+        source: "claude-code",
+        goal: "",
+        goalSource: "verbatim",
+        mode: "interactive",
+        startedAt: "2026-01-01T00:00:00.000Z",
+        endedAt: "2026-01-01T00:00:00.000Z",
+        outcome: "completed",
+        recordCount: 0,
+      },
+      phases: [],
+      actions: [],
+      mutations: [],
+      filesTouched: [],
+      verification: [],
+      claims: [],
+      gates: [],
+      artifacts: [],
+      costs: {
+        durationMs: 0,
+        toolCalls: 0,
+        toolCallBreakdown: {},
+        mutations: 0,
+        errors: 0,
+        retries: 0,
+      },
+      raw: { format: "jsonl", recordCount: 0, sha256: sha256("") },
+    });
+
+    expect(aer.integrity?.algorithm).toBe("sha256");
+    expect(verifyIntegrity(aer, "").ok).toBe(true);
+
+    aer.run.goal = "tampered";
+    const result = verifyIntegrity(aer, "");
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.path)).toContain("integrity.aerSha256");
   });
 });

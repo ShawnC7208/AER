@@ -1,10 +1,11 @@
-import { type AER, type Action, type ActionKind, sha256 } from "@aer/core";
+import { type AER, type Action, type ActionKind, attachIntegrity, sha256 } from "@aer/core";
 import { classifyTool, isMutating } from "./classify.js";
 import { rollupFilesTouched } from "./files-touched.js";
 import { type ToolActionContext, extractMutations } from "./mutations.js";
 import { arrayValue, objectValue, parseJsonl, stringValue } from "./parse.js";
 import { buildPhases } from "./phases.js";
 import { summarizeContent, summarizeToolInput, targetForTool, trim } from "./summarize.js";
+import { buildVerification } from "./verification.js";
 
 export interface ConvertOptions {
   withDisk?: boolean;
@@ -23,6 +24,7 @@ export function convert(jsonl: string, opts: ConvertOptions = {}): AER {
   const startedAt = firstTimestamp(records);
   const endedAt = lastTimestamp(records);
   const phases = buildPhases(actions, startedAt, endedAt);
+  const verification = buildVerification(actions);
   const mutationResult = extractMutations(toolActions, records, opts);
   const filesTouched = rollupFilesTouched(mutationResult.mutations);
   const toolCallBreakdown = toolActions.reduce<Record<string, number>>((acc, toolAction) => {
@@ -65,20 +67,20 @@ export function convert(jsonl: string, opts: ConvertOptions = {}): AER {
   };
   if (opts.rawPath) raw.path = opts.rawPath;
 
-  return {
+  return attachIntegrity({
     version: "1.0",
     run,
     phases,
     actions,
     mutations: mutationResult.mutations,
     filesTouched,
-    verification: [],
+    verification,
     claims: [],
     gates: [],
     artifacts: buildArtifacts(mutationResult.mutations),
     costs,
     raw,
-  };
+  });
 }
 
 function buildActions(records: ReturnType<typeof parseJsonl>): ActionBuildResult {
@@ -103,6 +105,7 @@ function buildActions(records: ReturnType<typeof parseJsonl>): ActionBuildResult
           const actionInput = {
             actions,
             recordIndex: record.index,
+            rawLine: record.rawLine,
             ts: timestamp(record),
             kind: mutates ? "mutate" : kind,
             toolName: name,
@@ -128,6 +131,7 @@ function buildActions(records: ReturnType<typeof parseJsonl>): ActionBuildResult
             actionFrom({
               actions,
               recordIndex: record.index,
+              rawLine: record.rawLine,
               ts: timestamp(record),
               kind: "report",
               toolName: "assistant_text",
@@ -149,6 +153,7 @@ function buildActions(records: ReturnType<typeof parseJsonl>): ActionBuildResult
           actionFrom({
             actions,
             recordIndex: record.index,
+            rawLine: record.rawLine,
             ts: timestamp(record),
             kind: "other",
             toolName: "tool_result",
@@ -180,6 +185,7 @@ function actionForRecord(record: ReturnType<typeof parseJsonl>[number], ordinal:
   const action: Action = {
     id: `a${ordinal}`,
     recordIndex: record.index,
+    recordHash: sha256(record.rawLine),
     ts: timestamp(record),
     kind,
     toolName: record.type,
@@ -196,6 +202,7 @@ function actionForRecord(record: ReturnType<typeof parseJsonl>[number], ordinal:
 function actionFrom(input: {
   actions: Action[];
   recordIndex: number;
+  rawLine: string;
   ts: string;
   kind: ActionKind;
   toolName: string;
@@ -207,6 +214,7 @@ function actionFrom(input: {
   const action: Action = {
     id: `a${input.actions.length + 1}`,
     recordIndex: input.recordIndex,
+    recordHash: sha256(input.rawLine),
     ts: input.ts,
     kind: input.kind,
     toolName: input.toolName,

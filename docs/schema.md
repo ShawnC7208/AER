@@ -17,10 +17,18 @@ The top-level fields are:
 - `artifacts`
 - `costs`
 - `raw`
+- `integrity`
 
-Phase 1 emits deterministic records only:
+The deterministic converter currently emits:
 
-- `phases` contains one placeholder phase named `Phase 1`.
-- `verification` is empty until deterministic verification detection lands in Phase 4.
+- `phases` inferred from action transitions such as setup, local context, research,
+  implementation, verification, and wrap-up signals.
+- `verification` is populated from recognized Bash test, typecheck, lint, build,
+  and format commands.
+- `actions[].recordHash` is `sha256` of the original source JSONL line that
+  produced the action.
+- `raw.sha256` is `sha256` of the complete source JSONL file.
+- `integrity.aerSha256` is `sha256` of the canonical AER payload with the
+  `integrity` block removed.
 - `claims` is empty until optional LLM enrichment lands in Phase 6.
 - `gates` is empty until richer approval extraction lands later.

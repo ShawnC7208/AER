@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -15,8 +19,49 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm lint
-      - run: echo "Publishing is intentionally disabled until npm credentials and changesets are configured."
+      - name: Publish @aer/core
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          if npm view "@aer/core@$VERSION" version >/dev/null 2>&1; then
+            echo "@aer/core@$VERSION is already published, skipping"
+          else
+            pnpm --filter @aer/core publish --access public --no-git-checks --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish @aer/adapter-claude-code
+        run: |
+          VERSION=$(node -p "require('./packages/adapter-claude-code/package.json').version")
+          if npm view "@aer/adapter-claude-code@$VERSION" version >/dev/null 2>&1; then
+            echo "@aer/adapter-claude-code@$VERSION is already published, skipping"
+          else
+            pnpm --filter @aer/adapter-claude-code publish --access public --no-git-checks --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish @aer/viewer
+        run: |
+          VERSION=$(node -p "require('./packages/viewer/package.json').version")
+          if npm view "@aer/viewer@$VERSION" version >/dev/null 2>&1; then
+            echo "@aer/viewer@$VERSION is already published, skipping"
+          else
+            pnpm --filter @aer/viewer publish --access public --no-git-checks --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish @aer/cli
+        run: |
+          VERSION=$(node -p "require('./packages/cli/package.json').version")
+          if npm view "@aer/cli@$VERSION" version >/dev/null 2>&1; then
+            echo "@aer/cli@$VERSION is already published, skipping"
+          else
+            pnpm --filter @aer/cli publish --access public --no-git-checks --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,6 +1,7 @@
 import type { Action, Phase } from "@aer/core";
+import { classifyVerificationCommand } from "./verification.js";
 
-type PhaseCategory = "setup" | "context" | "research" | "synthesize" | "report";
+type PhaseCategory = "setup" | "context" | "research" | "synthesize" | "verify" | "report";
 
 interface CategorizedAction {
   action: Action;
@@ -66,43 +67,29 @@ export function buildPhases(actions: Action[], startedAt: string, endedAt: strin
 function categorizeActions(actions: Action[]): CategorizedAction[] {
   let previous: PhaseCategory = "setup";
   return actions.map((action, index) => {
-    const category = categoryFor(action, actions.slice(index + 1), previous);
+    const category = categoryFor(action, previous);
     previous = category;
     return { action, category };
   });
 }
 
-function categoryFor(
-  action: Action,
-  nextActions: Action[],
-  previous: PhaseCategory,
-): PhaseCategory {
+function categoryFor(action: Action, previous: PhaseCategory): PhaseCategory {
   if (action.mutates || action.kind === "mutate") return "synthesize";
+  if (classifyVerificationCommand(action)) return "verify";
   if (action.kind === "search") return "research";
   if (action.kind === "read" || action.toolName === "Bash") return "context";
-  if (action.kind === "report") return hasFutureWork(nextActions) ? previous : "report";
+  if (action.kind === "report") return "report";
   if (action.toolName === "tool_result") return previous;
   return previous;
-}
-
-function hasFutureWork(actions: Action[]): boolean {
-  return actions.some(
-    (action) =>
-      action.mutates ||
-      action.kind === "mutate" ||
-      action.kind === "search" ||
-      action.kind === "read" ||
-      action.toolName === "Bash",
-  );
 }
 
 function boundaryReason(
   previous: CategorizedAction,
   current: CategorizedAction,
 ): string | undefined {
-  if (previous.category === current.category) return undefined;
   const gap = durationMs(previous.action.ts, current.action.ts);
   if (gap >= 30_000) return `started after ${formatDuration(gap)} gap`;
+  if (previous.category === current.category) return undefined;
   return `started by tool-kind transition: ${previous.category} -> ${current.category}`;
 }
 
@@ -112,7 +99,7 @@ function phaseName(items: CategorizedAction[]): string {
       acc[item.category] += 1;
       return acc;
     },
-    { setup: 0, context: 0, research: 0, synthesize: 0, report: 0 },
+    { setup: 0, context: 0, research: 0, synthesize: 0, verify: 0, report: 0 },
   );
   const category = (Object.keys(counts) as PhaseCategory[]).sort(
     (a, b) => counts[b] - counts[a],
@@ -121,6 +108,7 @@ function phaseName(items: CategorizedAction[]): string {
   if (category === "context") return "Local context";
   if (category === "research") return "Research";
   if (category === "synthesize") return "Synthesize";
+  if (category === "verify") return "Verify";
   return "Report";
 }
 

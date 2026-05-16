@@ -14,6 +14,7 @@ For local testing, run:
 
 ```sh
 pnpm aer convert examples/daily-research.jsonl -o examples/daily-research.aer.json
+pnpm aer convert examples/ -o aer-out/
 pnpm --filter @aer/adapter-claude-code test
 ```
 
