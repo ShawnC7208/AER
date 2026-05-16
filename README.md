@@ -1,9 +1,9 @@
 # AER
 
-> Status: Phase 4 implemented. The deterministic Claude Code JSONL converter,
+> Status: Phase 5 implemented. The deterministic Claude Code JSONL converter,
 > CLI viewer, offline static demo, multi-input CLI, watch mode, summaries, and
 > schema validation can render and inspect local AER records with verification
-> rollups.
+> rollups and tamper-evident integrity manifests.
 
 AER turns raw agent logs into auditable, skimmable Agent Execution Records. The first
 adapter targets Claude Code JSONL sessions and produces deterministic AER JSON with
@@ -32,9 +32,9 @@ npm install -g @aer/cli
 
 ## Packages
 
-- `@aer/core` — AER v1 TypeScript types, zod schema, hashing, and unified diffs.
+- `@aer/core` — AER v1 TypeScript types, zod schema, hashing, integrity, and unified diffs.
 - `@aer/adapter-claude-code` — Claude Code JSONL to AER conversion.
-- `@aer/cli` — `aer convert`, `aer view`, `aer summary`, and `aer validate`.
+- `@aer/cli` — `aer convert`, `aer view`, `aer summary`, `aer validate`, `aer verify`, and `aer sign`.
 - `@aer/viewer` — deterministic, self-contained HTML renderer and browser demo bundle.
 - `@aer/enrich` — placeholder for the Phase 6 optional LLM enrichment package.
 
@@ -46,6 +46,7 @@ pnpm aer convert examples/daily-research.jsonl -o examples/daily-research.aer.js
 pnpm aer view examples/daily-research.jsonl -o examples/daily-research.aer.html
 pnpm aer summary examples/daily-research.jsonl
 pnpm aer validate examples/daily-research.aer.json
+pnpm aer verify examples/daily-research.aer.json examples/daily-research.jsonl
 ```
 
 The checked-in JSONL examples are sanitized fixtures. Keep public fixtures free of
@@ -69,6 +70,8 @@ pnpm aer convert <input.jsonl|directory> [-o output] [--with-disk]
 pnpm aer view <input.jsonl|input.aer.json> [-o output.html] [--open] [--watch]
 pnpm aer summary <input.jsonl|input.aer.json>
 pnpm aer validate <input.aer.json>
+pnpm aer verify <input.aer.json> <input.jsonl>
+pnpm aer sign <input.aer.json> --key ed25519-private.pem [-o signed.aer.json]
 ```
 
 Options:
@@ -78,9 +81,10 @@ Options:
   `./aer-out/`.
 - `-o, --output` writes single-file output to a file. For directory conversion it is
   treated as an output directory.
-- `--with-disk` allows the adapter to read files from disk when the trace lacks prior
-  file content for mutation diffs. Relative file paths are resolved from the source
-  record's `cwd` when it is available.
+- `--with-disk` allows the adapter to read current files from disk when the trace
+  lacks prior file content for mutation diffs. Treat those hashes as a best-effort
+  disk snapshot unless you are converting against a known pre-mutation checkout.
+  Relative file paths are resolved from the source record's `cwd` when available.
 - `aer view` renders a self-contained static HTML file. JSONL inputs are converted
   first; `.aer.json` inputs are parsed and rendered directly.
 - `--open` opens the rendered HTML in the system browser.
@@ -89,6 +93,9 @@ Options:
 - `aer summary` prints deterministic run metrics, mutation counts, and files touched.
 - `aer validate` checks an AER JSON file against the v1 schema and prints readable
   schema errors.
+- `aer verify` checks the embedded AER manifest, source file hash, and per-action
+  source line hashes against the original JSONL.
+- `aer sign` adds an Ed25519 signature block using a bring-your-own private key.
 
 Generated files matching `examples/*.aer.json`, `examples/*.aer.html`, and
 `examples/dist/` are ignored by git. The GitHub Pages workflow rebuilds the browser
@@ -107,6 +114,7 @@ AER v1 currently emits:
 - `artifacts`
 - `costs`
 - `raw`
+- `integrity`
 
 Current deterministic limits:
 
@@ -118,8 +126,9 @@ crashing the converter. The static viewer renders only sections with data, group
 long action runs behind progressive disclosure, highlights mutations, and includes a
 raw action timeline for deeper inspection.
 
-See [`docs/phase-detection.md`](docs/phase-detection.md) for the deterministic
-phase and verification heuristics.
+See [`docs/phase-detection.md`](docs/phase-detection.md) for deterministic phase
+and verification heuristics, and [`docs/integrity.md`](docs/integrity.md) for
+hashing and signing behavior.
 
 ## Development
 
@@ -144,5 +153,5 @@ pnpm --filter @aer/viewer build:web
 - Phase 2: static HTML viewer and drag/drop demo. Implemented.
 - Phase 3: CLI polish, multi-input, watch mode, npm release. Implemented.
 - Phase 4: heuristic phase detection and verification rollup. Implemented.
-- Phase 5: integrity verification.
+- Phase 5: integrity verification. Implemented.
 - Phase 6: optional LLM enrichment.

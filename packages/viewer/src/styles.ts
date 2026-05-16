@@ -247,6 +247,8 @@ details.diff-wrap[open] > summary .arrow, details.raw[open] > summary .arrow {
 .diff .add { background: var(--ok-bg); color: #1f5b3a; display: block; }
 .diff .rem { background: var(--danger-bg); color: var(--danger); display: block; }
 .diff .ctx { color: var(--ink-3); display: block; }
+.diff .skip { color: var(--ink-3); display: block; font-style: italic; }
+.diff .word { background: rgba(255, 204, 0, 0.32); border-radius: 2px; }
 .claim { padding: 12px 0; }
 .claim .flags { color: var(--attn); font-size: 12px; margin-top: 4px; }
 .raw {

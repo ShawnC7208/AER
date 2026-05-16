@@ -60,6 +60,43 @@ describe("@aer/viewer", () => {
     expect(html).toContain("pnpm test");
     expect(html).toContain("3 passed");
   });
+
+  it("renders word-level diff highlights and collapses long unchanged context", () => {
+    const aer = sampleAer({
+      mutations: [
+        {
+          id: "m1",
+          actionId: "a1",
+          kind: "edit",
+          target: "hello.ts",
+          diff: [
+            "--- before",
+            "+++ after",
+            "@@",
+            " one",
+            " two",
+            " three",
+            " four",
+            " five",
+            " six",
+            " seven",
+            " eight",
+            " nine",
+            '-const status = "old";',
+            '+const status = "new";',
+          ].join("\n"),
+          diffStats: { added: 1, removed: 1 },
+          gateFired: false,
+        },
+      ],
+    });
+
+    const html = renderHTML(aer);
+
+    expect(html).toContain("unchanged lines");
+    expect(html).toContain('<span class="word">old</span>');
+    expect(html).toContain('<span class="word">new</span>');
+  });
 });
 
 function sampleAer(overrides: Partial<AER> = {}): AER {

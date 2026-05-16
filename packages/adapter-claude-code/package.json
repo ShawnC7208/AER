@@ -1,6 +1,6 @@
 {
   "name": "@aer/adapter-claude-code",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Claude Code JSONL adapter for AER.",
   "license": "Apache-2.0",
   "type": "module",

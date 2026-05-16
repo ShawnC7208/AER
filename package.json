@@ -1,6 +1,6 @@
 {
   "name": "aer-toolkit",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Agent Execution Records: deterministic conversion of agent logs into auditable records.",
   "license": "Apache-2.0",

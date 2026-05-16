@@ -67,45 +67,29 @@ export function buildPhases(actions: Action[], startedAt: string, endedAt: strin
 function categorizeActions(actions: Action[]): CategorizedAction[] {
   let previous: PhaseCategory = "setup";
   return actions.map((action, index) => {
-    const category = categoryFor(action, actions.slice(index + 1), previous);
+    const category = categoryFor(action, previous);
     previous = category;
     return { action, category };
   });
 }
 
-function categoryFor(
-  action: Action,
-  nextActions: Action[],
-  previous: PhaseCategory,
-): PhaseCategory {
+function categoryFor(action: Action, previous: PhaseCategory): PhaseCategory {
   if (action.mutates || action.kind === "mutate") return "synthesize";
   if (classifyVerificationCommand(action)) return "verify";
   if (action.kind === "search") return "research";
   if (action.kind === "read" || action.toolName === "Bash") return "context";
-  if (action.kind === "report") return hasFutureWork(nextActions) ? previous : "report";
+  if (action.kind === "report") return "report";
   if (action.toolName === "tool_result") return previous;
   return previous;
-}
-
-function hasFutureWork(actions: Action[]): boolean {
-  return actions.some(
-    (action) =>
-      action.mutates ||
-      action.kind === "mutate" ||
-      Boolean(classifyVerificationCommand(action)) ||
-      action.kind === "search" ||
-      action.kind === "read" ||
-      action.toolName === "Bash",
-  );
 }
 
 function boundaryReason(
   previous: CategorizedAction,
   current: CategorizedAction,
 ): string | undefined {
-  if (previous.category === current.category) return undefined;
   const gap = durationMs(previous.action.ts, current.action.ts);
   if (gap >= 30_000) return `started after ${formatDuration(gap)} gap`;
+  if (previous.category === current.category) return undefined;
   return `started by tool-kind transition: ${previous.category} -> ${current.category}`;
 }
 

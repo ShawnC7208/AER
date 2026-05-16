@@ -1,5 +1,6 @@
 export interface ClaudeRecord {
   index: number;
+  rawLine: string;
   raw: Record<string, unknown>;
   type: string;
   timestamp?: string;
@@ -9,18 +10,18 @@ export interface ClaudeRecord {
 export function parseJsonl(jsonl: string): ClaudeRecord[] {
   return jsonl
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+    .filter((line) => line.trim().length > 0)
     .map((line, index) => {
       let raw: Record<string, unknown>;
       try {
-        raw = JSON.parse(line) as Record<string, unknown>;
+        raw = JSON.parse(line.trim()) as Record<string, unknown>;
       } catch (error) {
         throw new Error(`Invalid JSONL at line ${index + 1}: ${(error as Error).message}`);
       }
 
       const record: ClaudeRecord = {
         index,
+        rawLine: line,
         raw,
         type: stringValue(raw.type) ?? "unknown",
       };

@@ -10,7 +10,7 @@ The Claude Code adapter starts a new phase when a stable signal appears:
 - the dominant action category changes, such as local context to synthesize
 - a verification command follows implementation work
 - mutation actions form an implementation cluster
-- a final report action appears after work is complete
+- an assistant text report action appears
 - at least 30 seconds pass between consecutive actions
 
 Phase names are generic and deterministic:
@@ -42,7 +42,8 @@ Recognized checks include:
   `make`, `bazel build`
 - `format`: `prettier`, `biome format`, `black`, `gofmt`, `rustfmt`
 
-Adjacent same-kind verification invocations are grouped into one check. If the
-final attempt passes after an earlier failure, the check outcome is `recovered`.
-False negatives are preferred over false positives: commands that are not clearly
-verification-related are left alone.
+Same-kind verification invocations with the same normalized command are grouped
+into one check until a report action appears, even when edits happen between
+attempts. If the final attempt passes after an earlier failure, the check outcome
+is `recovered`. False negatives are preferred over false positives: commands that
+are not clearly verification-related are left alone.

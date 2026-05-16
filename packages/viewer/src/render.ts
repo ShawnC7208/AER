@@ -212,18 +212,133 @@ function renderRawRow(action: Action, mutationActionIds: Set<string>): string {
 }
 
 function renderDiff(diff: string): string {
-  return diff
-    .split("\n")
-    .map((line) => {
-      const cls =
-        line.startsWith("+") && !line.startsWith("+++")
-          ? "add"
-          : line.startsWith("-") && !line.startsWith("---")
-            ? "rem"
-            : "ctx";
-      return `<span class="${cls}">${escapeHtml(line)}</span>`;
-    })
-    .join("\n");
+  const lines = collapseContext(diff.split("\n"));
+  const rendered: string[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    const next = lines[index + 1];
+    if (isRemovedLine(line) && next && isAddedLine(next)) {
+      const pair = renderChangedPair(line.slice(1), next.slice(1));
+      rendered.push(`<span class="rem">-${pair.removed}</span>`);
+      rendered.push(`<span class="add">+${pair.added}</span>`);
+      index += 1;
+      continue;
+    }
+    if (line.startsWith("__AER_SKIP__:")) {
+      const count = line.slice("__AER_SKIP__:".length);
+      rendered.push(`<span class="skip">... ${escapeHtml(count)} unchanged lines ...</span>`);
+      continue;
+    }
+    const cls = isAddedLine(line) ? "add" : isRemovedLine(line) ? "rem" : "ctx";
+    returnLine(rendered, cls, line);
+  }
+
+  return rendered.join("\n");
+}
+
+function returnLine(rendered: string[], cls: string, line: string): void {
+  rendered.push(`<span class="${cls}">${escapeHtml(line)}</span>`);
+}
+
+function collapseContext(lines: string[]): string[] {
+  const collapsed: string[] = [];
+  const maxContext = 8;
+  const edgeContext = 3;
+
+  for (let index = 0; index < lines.length; ) {
+    if (!lines[index]?.startsWith(" ")) {
+      collapsed.push(lines[index] ?? "");
+      index += 1;
+      continue;
+    }
+
+    const start = index;
+    while (index < lines.length && lines[index]?.startsWith(" ")) index += 1;
+    const run = lines.slice(start, index);
+    if (run.length <= maxContext) {
+      collapsed.push(...run);
+      continue;
+    }
+    collapsed.push(...run.slice(0, edgeContext));
+    collapsed.push(`__AER_SKIP__:${run.length - edgeContext * 2}`);
+    collapsed.push(...run.slice(-edgeContext));
+  }
+
+  return collapsed;
+}
+
+function isAddedLine(line: string): boolean {
+  return line.startsWith("+") && !line.startsWith("+++");
+}
+
+function isRemovedLine(line: string): boolean {
+  return line.startsWith("-") && !line.startsWith("---");
+}
+
+function renderChangedPair(removed: string, added: string): { removed: string; added: string } {
+  const removedTokens = tokenizeWords(removed);
+  const addedTokens = tokenizeWords(added);
+  const common = longestCommonSubsequence(removedTokens, addedTokens);
+  return {
+    removed: renderWordTokens(removedTokens, common.removed),
+    added: renderWordTokens(addedTokens, common.added),
+  };
+}
+
+function tokenizeWords(value: string): string[] {
+  return value.match(/\s+|[A-Za-z0-9_]+|./g) ?? [];
+}
+
+function longestCommonSubsequence(
+  left: string[],
+  right: string[],
+): { removed: Set<number>; added: Set<number> } {
+  const lengths = Array.from({ length: left.length + 1 }, () =>
+    Array.from({ length: right.length + 1 }, () => 0),
+  );
+  for (let leftIndex = left.length - 1; leftIndex >= 0; leftIndex -= 1) {
+    for (let rightIndex = right.length - 1; rightIndex >= 0; rightIndex -= 1) {
+      const row = lengths[leftIndex];
+      if (!row) continue;
+      row[rightIndex] =
+        left[leftIndex] === right[rightIndex]
+          ? (lengths[leftIndex + 1]?.[rightIndex + 1] ?? 0) + 1
+          : Math.max(
+              lengths[leftIndex + 1]?.[rightIndex] ?? 0,
+              lengths[leftIndex]?.[rightIndex + 1] ?? 0,
+            );
+    }
+  }
+
+  const removed = new Set<number>();
+  const added = new Set<number>();
+  let leftIndex = 0;
+  let rightIndex = 0;
+  while (leftIndex < left.length && rightIndex < right.length) {
+    if (left[leftIndex] === right[rightIndex]) {
+      removed.add(leftIndex);
+      added.add(rightIndex);
+      leftIndex += 1;
+      rightIndex += 1;
+    } else if (
+      (lengths[leftIndex + 1]?.[rightIndex] ?? 0) >= (lengths[leftIndex]?.[rightIndex + 1] ?? 0)
+    ) {
+      leftIndex += 1;
+    } else {
+      rightIndex += 1;
+    }
+  }
+
+  return { removed, added };
+}
+
+function renderWordTokens(tokens: string[], unchanged: Set<number>): string {
+  return tokens
+    .map((token, index) =>
+      unchanged.has(index) ? escapeHtml(token) : `<span class="word">${escapeHtml(token)}</span>`,
+    )
+    .join("");
 }
 
 function renderNotice(aer: AER): string {

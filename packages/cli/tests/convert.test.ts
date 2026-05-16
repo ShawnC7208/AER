@@ -40,6 +40,12 @@ describe("@aer/cli convert", () => {
     expect(JSON.parse(readFileSync(join(output, "nested__child.aer.json"), "utf8")).run.id).toBe(
       "child-session",
     );
+    expect(JSON.parse(readFileSync(join(output, "root.aer.json"), "utf8")).raw.path).toBe(
+      "root.jsonl",
+    );
+    expect(JSON.parse(readFileSync(join(output, "nested__child.aer.json"), "utf8")).raw.path).toBe(
+      "nested/child.jsonl",
+    );
   });
 });
 

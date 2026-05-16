@@ -11,6 +11,7 @@ export interface AER {
   artifacts: Artifact[];
   costs: Costs;
   raw: RawRef;
+  integrity?: IntegrityManifest;
 }
 
 export interface Run {
@@ -53,6 +54,7 @@ export interface Action {
   outputSummary?: string;
   phaseId: string;
   errored: boolean;
+  recordHash?: string;
 }
 
 export type ActionKind = "read" | "search" | "mutate" | "report" | "meta" | "other";
@@ -142,4 +144,16 @@ export interface RawRef {
   path?: string;
   recordCount: number;
   sha256: string;
+}
+
+export interface IntegrityManifest {
+  algorithm: "sha256";
+  aerSha256: string;
+  signature?: SignatureBlock;
+}
+
+export interface SignatureBlock {
+  algorithm: "Ed25519";
+  publicKey: string;
+  signature: string;
 }

@@ -30,6 +30,8 @@ const commandPatterns: Array<{ kind: VerificationKind; pattern: RegExp }> = [
 
 const failurePattern = /\b(fail(?:ed|ure|ing)?|error|errors|exception|panic)\b/i;
 const successPattern = /\b(pass(?:ed|ing)?|success|successful|ok|0 errors?)\b/i;
+const explicitFailurePattern =
+  /\b([1-9]\d*)\s+(failed|failures?|errors?)\b|\b(failed|failure|exception|panic)\b/i;
 
 export function buildVerification(actions: Action[]): VerificationCheck[] {
   const checks: VerificationCheck[] = [];
@@ -43,7 +45,8 @@ export function buildVerification(actions: Action[]): VerificationCheck[] {
     const outcome = attemptOutcome(action);
     const canAppend =
       current?.kind === kind &&
-      actions.slice(lastVerificationActionIndex + 1, index).every(isToolResultAction);
+      normalizedCommand(current.command) === normalizedCommand(commandFor(action)) &&
+      !actions.slice(lastVerificationActionIndex + 1, index).some(isReportAction);
 
     if (!current || !canAppend) {
       current = {
@@ -81,8 +84,13 @@ function commandFor(action: Action): string {
 function attemptOutcome(action: Action): AttemptOutcome {
   if (action.errored) return "failed";
   const text = `${action.outputSummary ?? ""} ${action.inputSummary}`;
+  if (hasExplicitFailure(text)) return "failed";
   if (failurePattern.test(text) && !successPattern.test(text)) return "failed";
   return "passed";
+}
+
+function hasExplicitFailure(text: string): boolean {
+  return explicitFailurePattern.test(text);
 }
 
 function checkOutcome(attempts: VerificationCheck["attempts"]): VerificationCheck["outcome"] {
@@ -102,6 +110,10 @@ function detailFor(action: Action): string | undefined {
   return undefined;
 }
 
-function isToolResultAction(action: Action): boolean {
-  return action.toolName === "tool_result";
+function normalizedCommand(command: string): string {
+  return command.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function isReportAction(action: Action): boolean {
+  return action.kind === "report";
 }

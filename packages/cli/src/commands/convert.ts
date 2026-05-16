@@ -33,7 +33,7 @@ function runConvertDirectory(input: string, opts: ConvertCommandOptions): void {
   const outputDir = opts.output ?? "aer-out";
   let written = 0;
   for (const file of files) {
-    const aer = convertFile(file, opts);
+    const aer = convertFile(file, opts, relativeRawPath(input, file));
     const output = join(outputDir, `${safeRelativeStem(input, file)}.aer.json`);
     writeOutput(output, `${JSON.stringify(aer, null, 2)}\n`);
     written += 1;
@@ -41,12 +41,16 @@ function runConvertDirectory(input: string, opts: ConvertCommandOptions): void {
   process.stderr.write(`Converted ${written} file${written === 1 ? "" : "s"} to ${outputDir}\n`);
 }
 
-function convertFile(input: string, opts: ConvertCommandOptions): ReturnType<typeof parseAER> {
+function convertFile(
+  input: string,
+  opts: ConvertCommandOptions,
+  rawPath = basename(input),
+): ReturnType<typeof parseAER> {
   const jsonl = readTextFile(input);
   let aer: ReturnType<typeof parseAER>;
   try {
     const convertOptions = {
-      rawPath: basename(input),
+      rawPath,
       ...(opts.withDisk ? { withDisk: true } : {}),
       ...(opts.withDisk ? { readFile: readFileIfExists } : {}),
     };
@@ -74,8 +78,14 @@ function findJsonlFiles(dir: string): string[] {
 }
 
 function safeRelativeStem(root: string, file: string): string {
-  const relativePath = relative(root, file).replace(/\.jsonl$/, "");
-  return relativePath.split(sep).join("__");
+  return relativeRawPath(root, file)
+    .replace(/\.jsonl$/, "")
+    .split("/")
+    .join("__");
+}
+
+function relativeRawPath(root: string, file: string): string {
+  return relative(root, file).split(sep).join("/");
 }
 
 function writeOutput(output: string, serialized: string): void {
